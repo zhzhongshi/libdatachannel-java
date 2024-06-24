@@ -133,6 +133,12 @@ pc.onconnectionstatechange = ev => handleChange();
 pc.oniceconnectionstatechange = ev => handleChange();
 
 function handleChange() {
+    let stat2 = document.getElementById('stat2');
+    stat2.classList = [];
+    // closed connected connecting disconnected failed
+    stat2.classList.add("state-" + pc.connectionState)
+    // checking closed completed connected disconnected failed new
+    stat2.classList.add("ice-" + pc.iceConnectionState)
     let stat = 'ConnectionState: <strong>' + pc.connectionState + '</strong> IceConnectionState: <strong>' + pc.iceConnectionState + '</strong>';
     document.getElementById('stat').innerHTML = stat;
     console.log('%c' + new Date().toISOString() + ': ConnectionState: %c' + pc.connectionState + ' %cIceConnectionState: %c' + pc.iceConnectionState,

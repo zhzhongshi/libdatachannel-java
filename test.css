@@ -8,8 +8,30 @@ body {
     gap: 16px;
     display: flex;
     flex-direction: row;
+}
+
+.full-row {
     height: 100%;
 }
+
+#stat2 span {
+    display: none;
+}
+
+/*
+closed connected connecting disconnected failed
+checking closed completed connected disconnected failed new
+ */
+#stat2.state-connected span.state-connected,
+#stat2.state-connecting span.state-connecting,
+#stat2.state-failed span.state-failed,
+#stat2.ice-connected span.ice-connected,
+#stat2.ice-checking span.ice-checking,
+#stat2.ice-failed span.ice-failed {
+    display: block;
+}
+
+
 
 .input-container {
     position: relative;
