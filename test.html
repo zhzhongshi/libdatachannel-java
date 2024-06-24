@@ -18,6 +18,27 @@
 
     let offer = document.getElementById('offer');
 
+    function hexToBase64(hex) {
+        const bytes = [];
+        for (let i = 0; i < hex.length; i += 2) {
+            bytes.push(parseInt(hex.substring(i, i +2), 16));
+        }
+        let binaryString = String.fromCharCode.apply(null, bytes)
+        return btoa(binaryString).replaceAll(/=+$/g, "");
+    }
+
+    function ipv6ToBase64(ipv6) {
+        const bytes = [];
+        const segments = ipv6.split(':').map(segment => segment.padStart(4, '0'));
+        for (let hexSegment of segments) {
+            for (let i = 0; i < hexSegment.length; i += 2) {
+                bytes.push(parseInt(hexSegment.substring(i, i+2), 16));
+            }
+        }
+        let binaryString = String.fromCharCode(...new Uint8Array(bytes));
+        return btoa(binaryString).replaceAll(/=+$/g, "");
+    }
+
     async function acceptOffer() {
         if (pc.signalingState != "stable") return;
         console.log("Accepting offer...", offer.value)
@@ -27,12 +48,43 @@
             sdp: offer.value
         });
         await pc.setLocalDescription(await pc.createAnswer());
-        pc.onicecandidate = ({
-                                 candidate
-                             }) => {
+        pc.onicecandidate = ({ candidate }) => {
             if (candidate) return;
             answer.focus();
-            answer.value = pc.localDescription.sdp;
+            let sdp = pc.localDescription.sdp;
+            // Cleanup Candidates
+
+            console.log("SDP:");
+            sdp = sdp.replaceAll("\r\n", "\n")
+
+            console.log(sdp)
+
+            sdp = sdp.replaceAll(/a=candidate.+\.local.+\n/g, ""); // no local
+            sdp = sdp.replaceAll(/a=candidate:.+typ (?!srflx|host).+\n/g, ""); // must contain srflx or host
+
+            let fingerPrint = hexToBase64(/a=fingerprint:sha-256 (.+)\n/g.exec(sdp)[1].replaceAll(":", ""));
+            let icePwd = hexToBase64(/a=ice-pwd:(.+)\n/g.exec(sdp)[1]);
+            let iceUfrag = hexToBase64(/a=ice-ufrag:(.+)\n/g.exec(sdp)[1]);
+            let shortSdp = `${fingerPrint}.${icePwd}.${iceUfrag}`
+            let candidatePattern = /a=candidate:([0-9]+) 1 UDP [0-9]+ ([^ ]+) ([0-9]+) typ (srflx|host) .+\n/g;
+            let match;
+            while (match = candidatePattern.exec(sdp)) {
+                let id = match[1];
+                let ip = match[2]
+                let port = match[3];
+                let type = match[4];
+                type = type === "srflx" ? type = "s" : type = "h";
+                if (ip.includes(":")) {
+                    shortSdp += '.6' + type + ipv6ToBase64(ip) + ":" + port + "#" + id;
+                } else {
+                    shortSdp += '.4' + type + btoa(ip + ":" + port).replaceAll("=+$", "") + "#" + id
+                }
+            }
+
+            console.log(shortSdp)
+            console.log(btoa(shortSdp))
+            answer.value = shortSdp;
+
             answer.select();
         };
     }
