@@ -11,6 +11,16 @@ body {
     height: 100%;
 }
 
+.input-container {
+    position: relative;
+}
+
+.input-icon {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+}
+
 .column.left-column {
     min-width: 500px;
     flex: 0
@@ -28,12 +38,16 @@ body {
     margin-bottom: 20px; /* Spacing between sections */
 }
 
+
 textarea, #chat {
     background-color: #3f3f3f;
     color: #e0e0e0;
     border: 1px solid #5c5c5c;
     padding: 8px;
     width: 100%; /* Full width */
+}
+#chat {
+    padding-left: 35px;
 }
 
 #offer {
