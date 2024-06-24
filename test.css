@@ -1,0 +1,72 @@
+body {
+    background-color: #2b2b2b;
+    color: #e0e0e0;
+    font-family: Arial, sans-serif;
+}
+
+.row {
+    gap: 16px;
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+}
+
+.column.left-column {
+    min-width: 500px;
+    flex: 0
+}
+
+.column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.section {
+    width: 100%;
+    margin-bottom: 20px; /* Spacing between sections */
+}
+
+textarea, #chat {
+    background-color: #3f3f3f;
+    color: #e0e0e0;
+    border: 1px solid #5c5c5c;
+    padding: 8px;
+    width: 100%; /* Full width */
+}
+
+#offer {
+    flex: 1;
+}
+
+.answer-container {
+    display: flex;
+    align-items: center;
+}
+
+#fullanswer {
+    flex: 1
+}
+
+#answer {
+    height: 100px;
+}
+
+/*#copyButton {*/
+/*    background-color: #3f3f3f;*/
+/*    color: #ffffff;*/
+/*    padding: 8px 16px;*/
+/*    border: none;*/
+/*    cursor: pointer;*/
+/*}*/
+
+#output {
+    margin: 0;
+    flex: 1;
+    background-color: #3f3f3f;
+    color: #e0e0e0;
+    padding: 10px;
+    border: 1px solid #5c5c5c;
+    overflow-y: auto; /* Enable vertical scrollbar if needed */
+}
