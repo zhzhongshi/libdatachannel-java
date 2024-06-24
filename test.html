@@ -77,7 +77,7 @@
                 if (ip.includes(":")) {
                     shortSdp += '.6' + type + ipv6ToBase64(ip) + ":" + port + "#" + id;
                 } else {
-                    shortSdp += '.4' + type + btoa(ip + ":" + port).replaceAll("=+$", "") + "#" + id
+                    shortSdp += '.4' + type + btoa(ip + ":" + port).replaceAll(/=+$/g, "") + "#" + id
                 }
             }
 
