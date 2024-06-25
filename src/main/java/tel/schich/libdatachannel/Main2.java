@@ -21,46 +21,53 @@ public class Main2 {
     public static void main(String[] args) {
         LibDataChannel.setLogLevel(LibDataChannel.LogLevel.RTC_LOG_WARNING);
         final var cfg = RTCPeerConnection.RTCConfiguration.of("stun.l.google.com:19302");
-        try (var pc = RTCPeerConnection.createPeer(cfg)) {
-            final var localSdp = new LocalSdpAssembler();
-            pc.onLocalDescription(localSdp);
-            pc.onLocalCandidate(localSdp);
+        while (true) {
+            try (var pc = RTCPeerConnection.createPeer(cfg)) {
+                final var localSdp = new LocalSdpAssembler();
+                pc.onLocalDescription(localSdp);
+                pc.onLocalCandidate(localSdp);
 
-            final var channel = pc.createDataChannel("test");
-            channel.onOpen(c -> {
-                System.out.println("Connection Open!");
-                c.sendMessage("Hello There!");
-            });
-            channel.onMessage((c, message) -> {
-                System.out.println("In: " + message);
-                c.sendMessage("You said things...");
-            });
 
-            CompletableFuture<String> future = new CompletableFuture<>();
-            channel.onClose(c -> future.completeAsync(() -> "closed!!"));
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+                final var future = channelFuture(pc, localSdp);
+                System.out.println(future.join());
             }
-
-            final var sdp = localSdp.assemble();
-            var encoded = Base64.getEncoder().encodeToString(sdp.getBytes());
-
-            System.out.println("SDP:\n\n" + sdp);
-            System.out.println("Awaiting RemoteDescription...");
-            System.out.println(WEBSITE + "?sdp=" + encoded);
-
-            var remoteDescription = readInput();
-            remoteDescription = Main2.readCompressed(remoteDescription);
-            System.out.println("Processing Answer...\n" + remoteDescription);
-
-            pc.setAnswer(remoteDescription);
-
-            System.out.println(future.join());
         }
 
+    }
+
+    private static CompletableFuture<String> channelFuture(final RTCPeerConnection pc, final LocalSdpAssembler localSdp) {
+        final var channel = pc.createDataChannel("test");
+        channel.onOpen(c -> {
+            System.out.println("Connection Open!");
+            c.sendMessage("Hello There!");
+        });
+        channel.onMessage((c, message) -> {
+            System.out.println("In: " + message);
+            c.sendMessage("You said things...");
+        });
+
+        CompletableFuture<String> future = new CompletableFuture<>();
+        channel.onClose(c -> future.completeAsync(() -> "closed!!"));
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        final var sdp = localSdp.assemble();
+        var encoded = Base64.getEncoder().encodeToString(sdp.getBytes());
+
+        System.out.println("SDP:\n\n" + sdp);
+        System.out.println("Awaiting RemoteDescription...");
+        System.out.println(WEBSITE + "?sdp=" + encoded);
+
+        var remoteDescription = readInput();
+        remoteDescription = Main2.readCompressed(remoteDescription);
+        System.out.println("Processing Answer...\n" + remoteDescription);
+
+        pc.setAnswer(remoteDescription);
+        return future;
     }
 
     static String readCompressed(String remoteDescription) {
@@ -200,7 +207,7 @@ public class Main2 {
 
         @Override
         public void handleDescription(final RTCPeerConnection peer, final String sdp, final String type) {
-                this.local = sdp;
+            this.local = sdp;
         }
 
         @Override
