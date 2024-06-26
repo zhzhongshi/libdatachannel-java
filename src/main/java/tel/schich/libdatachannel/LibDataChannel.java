@@ -33,4 +33,17 @@ public class LibDataChannel {
         // TODO must never call from callback
         INSTANCE.rtcCleanup();
     }
+
+
+    // TODO do we expose this? java has websockets
+
+    // TODO rtcCreateWebSocket
+    // TODO rtcDeleteWebSocket on WebSocket obj.
+    // TODO rtcGetWebSocketRemoteAddress on WebSocket obj.
+    // TODO rtcGetWebSocketPath on WebSocket obj.
+    // TODO rtcGetWebSocketPath on WebSocket obj.
+
+    // TODO rtcCreateWebSocketServer
+    // TODO rtcDeleteWebSocketServer on WebSocketServer obj
+    // TODO rtcGetWebSocketServerPort on WebSocketServer obj
 }

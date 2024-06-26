@@ -2,6 +2,8 @@ package tel.schich.libdatachannel;
 
 import static generated.DatachannelLibrary.INSTANCE;
 
+import generated.rtcReliability;
+
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.Optional;
@@ -50,6 +52,13 @@ public class RTCDataChannel implements AutoCloseable {
         INSTANCE.rtcSendMessage(this.channel, message, -1);
     }
 
+    /**
+     * Close the channel.
+     *
+     * After this function has been called, dc must not be used in a function call anymore.
+     * This function will block until all scheduled callbacks of dc return (except the one this function might be called in)
+     * and no other callback will be called for dc after it returns.
+     */
     @Override
     public void close() {
         INSTANCE.rtcClose(this.channel);
@@ -87,19 +96,56 @@ public class RTCDataChannel implements AutoCloseable {
 
     // TODO rtcGetAvailableAmount
 
-    public String getLabel() {
-        final var buffer = ByteBuffer.allocate(1024);
-        final var code = INSTANCE.rtcGetDataChannelLabel(this.channel, buffer, 1024);
-        if (code == 0) {
-            return new String(buffer.array());
-        }
-        throw new IllegalStateException("Error: " + code);
+    /**
+     * Retrieves the stream ID of the Data Channel.
+     *
+     * @return the stream id
+     */
+    public int streamId()
+    {
+        return INSTANCE.rtcGetDataChannelStream(this.channel);
     }
 
-    // TODO rtcGetDataChannelProtocol
+    /**
+     * Retrieves the label of a Data Channel.
+     *
+     * @return the label
+     */
+    public String label() {
+        return JNAUtil.readStringWithBuffer(((buff, size) -> INSTANCE.rtcGetDataChannelLabel(this.channel, buff, size)));
+    }
+
+    /**
+     * Retrieves the protocol of a Data Channel.
+     *
+     * @return the protocol
+     */
+    public String protocol()
+    {
+        return JNAUtil.readStringWithBuffer(((buff, size) -> INSTANCE.rtcGetDataChannelProtocol(this.channel, buff, size)));
+    }
+
+    // TODO rtcAddTrack
+    // TODO rtcDeleteTrack? on Track obj
+    // TODO rtcGetTrackDescription? on Track obj
+    // TODO rtcGetTrackMid? on Track obj
+    // TODO rtcGetTrackDirection? on Track obj
+
+    public DataChannelInitSettings reliability()
+    {
+        final var inner = new rtcReliability();
+        INSTANCE.rtcGetDataChannelReliability(this.channel, inner);
+        // TODO separate class & fill it
+        return new DataChannelInitSettings(inner);
+    }
+
     // TODO rtcGetDataChannelReliability
 
-    static interface ChannelCallbacks {
+    // TODO rtcGetDataChannelStream
+
+
+
+    interface ChannelCallbacks {
 
         @FunctionalInterface
         interface Open {
@@ -125,9 +171,5 @@ public class RTCDataChannel implements AutoCloseable {
             void handle(RTCDataChannel channel, final String message);
         }
 
-        interface MessageHandler {
-
-            void handle(int channel, String message);
-        }
     }
 }
