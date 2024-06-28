@@ -9,8 +9,12 @@ import java.util.function.BiFunction;
 
 public class JNAUtil {
 
-    public static Pointer toPointer(String uri) {
-        final byte[] bytes = Native.toByteArray(uri);
+    public static Pointer toPointer(String string) {
+        final byte[] bytes = Native.toByteArray(string);
+        return toPointer(bytes);
+    }
+
+    public static Pointer toPointer(byte[] bytes) {
         final Memory memory = new Memory(bytes.length + 1);
         memory.write(0, bytes, 0, bytes.length);
         memory.setByte(bytes.length, (byte) 0);

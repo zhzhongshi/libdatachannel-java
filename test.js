@@ -95,7 +95,17 @@ pc.ondatachannel = (event) => {
         console.log("We are connected!")
     };
     channel.onmessage = (event) => {
-        log(event.data);
+        if (event.data instanceof Blob) {
+            const reader = new FileReader();
+            reader.onload = () => {
+                output.innerHTML += `<a href="${reader.result}" download="test.png">Download File</a>`;
+            }
+            reader.readAsDataURL(event.data);
+            channel.send("File received");
+            channel.send(event.data);
+        } else {
+            log(event.data);
+        }
     };
 };
 

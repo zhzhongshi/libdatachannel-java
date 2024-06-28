@@ -3,6 +3,8 @@ package tel.schich.libdatachannel;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HexFormat;
@@ -34,10 +36,20 @@ public class Main {
         channel.onOpen(c -> {
             System.out.println("Connection Open!");
             c.sendMessage("Hello There!");
+            try {
+                c.sendMessage(Files.readAllBytes(Path.of("img.png")));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         });
-        channel.onMessage((c, message) -> {
-            System.out.println("In: " + message);
-            c.sendMessage("You said things...");
+        channel.onMessage((c, message, size) -> {
+            if (size < 0) {
+                System.out.println("In: " + new String(message));
+                c.sendMessage("You said things...");
+            } else {
+                c.sendMessage("What is this file?");
+                System.out.println("Got a file");
+            }
         });
 
         CompletableFuture<String> future = new CompletableFuture<>();
@@ -141,7 +153,7 @@ public class Main {
 
         remoteDescription = """
                 v=0
-                o=mozilla...THIS_IS_SDPARTA-99.0 1707886350958927893 0 IN IP4 0.0.0.0
+                o=- 1337 0 IN IP4 0.0.0.0
                 s=-
                 t=0 0
                 a=sendrecv
@@ -150,7 +162,7 @@ public class Main {
                 %s
                 a=ice-pwd:%s
                 a=ice-ufrag:%s
-                m=application %s UDP/DTLS/SCTP webrtc-datachannel
+                m=application %s UDP webrtc-datachannel
                 a=setup:active
                 """.formatted(fingerprint, cValue, cans, iceLine, iceFrag, port)
         ;

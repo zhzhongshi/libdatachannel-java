@@ -24,10 +24,9 @@ public class RTCPeerConnection implements AutoCloseable {
     }
 
     /**
-     * If it is not already closed, the Peer Connection is implicitly closed before being deleted.
-     * After this function has been called, pc must not be used in a function call anymore.
-     * This function will block until all scheduled callbacks of pc return (except the one this function might be called in)
-     * and no other callback will be called for pc after it returns.
+     * If it is not already closed, the Peer Connection is implicitly closed before being deleted. After this function has been called, pc must not be
+     * used in a function call anymore. This function will block until all scheduled callbacks of pc return (except the one this function might be
+     * called in) and no other callback will be called for pc after it returns.
      */
     @Override
     public void close() {
@@ -146,10 +145,9 @@ public class RTCPeerConnection implements AutoCloseable {
     }
 
     /**
-     * Retrieves the current local address, i.e. the network address of the currently selected local candidate.
-     * The address will have the format "IP_ADDRESS:PORT", where IP_ADDRESS may be either IPv4 or IPv6.
-     * The call might fail if the PeerConnection is not in state RTC_CONNECTED,
-     * and the address might change after connection.
+     * Retrieves the current local address, i.e. the network address of the currently selected local candidate. The address will have the format
+     * "IP_ADDRESS:PORT", where IP_ADDRESS may be either IPv4 or IPv6. The call might fail if the PeerConnection is not in state RTC_CONNECTED, and
+     * the address might change after connection.
      *
      * @return the local address
      */
@@ -159,9 +157,9 @@ public class RTCPeerConnection implements AutoCloseable {
     }
 
     /**
-     * Retrieves the current remote address, i.e. the network address of the currently selected remote candidate.
-     * The address will have the format "IP_ADDRESS:PORT", where IP_ADDRESS may be either IPv4 or IPv6.
-     * The call may fail if the state is not RTC_CONNECTED, and the address might change after connection.
+     * Retrieves the current remote address, i.e. the network address of the currently selected remote candidate. The address will have the format
+     * "IP_ADDRESS:PORT", where IP_ADDRESS may be either IPv4 or IPv6. The call may fail if the state is not RTC_CONNECTED, and the address might
+     * change after connection.
      *
      * @return the remote address
      */
@@ -171,16 +169,16 @@ public class RTCPeerConnection implements AutoCloseable {
     }
 
     /**
-     * Retrieves the currently selected candidate pair. The call may fail if the state is not RTC_CONNECTED, and the selected candidate pair might change after connection.
+     * Retrieves the currently selected candidate pair. The call may fail if the state is not RTC_CONNECTED, and the selected candidate pair might
+     * change after connection.
      */
     // TODO rtcGetSelectedCandidatePair?
 
 
     /**
-     * Retrieves the maximum stream ID a Data Channel may use.
-     * It is useful to create user-negotiated Data Channels with negotiated=true and manualStream=true.
-     * The maximum is negotiated during connection, therefore the final value after connection might be
-     * lower than before connection if the remote maximum is lower.
+     * Retrieves the maximum stream ID a Data Channel may use. It is useful to create user-negotiated Data Channels with negotiated=true and
+     * manualStream=true. The maximum is negotiated during connection, therefore the final value after connection might be lower than before
+     * connection if the remote maximum is lower.
      *
      * @return maximum stream ID
      */
@@ -232,15 +230,13 @@ public class RTCPeerConnection implements AutoCloseable {
 
 
     /**
-     * Adds a Data Channel on a Peer Connection.
-     * The Peer Connection does not need to be connected, however,
-     * the Data Channel will be open only when the Peer Connection is connected.
-     *
-     * rtcDataChannel() is equivalent to rtcDataChannelEx() with settings set to ordered, reliable, non-negotiated,
-     * with automatic stream ID selection (all flags set to false), and protocol set to an empty string.
+     * Adds a Data Channel on a Peer Connection. The Peer Connection does not need to be connected, however, the Data Channel will be open only when
+     * the Peer Connection is connected.
+     * <p>
+     * rtcDataChannel() is equivalent to rtcDataChannelEx() with settings set to ordered, reliable, non-negotiated, with automatic stream ID selection
+     * (all flags set to false), and protocol set to an empty string.
      *
      * @param label a user-defined UTF-8 string representing the Data Channel name
-     *
      * @return the created data channel
      */
     public RTCDataChannel createDataChannel(String label) {
@@ -254,13 +250,11 @@ public class RTCPeerConnection implements AutoCloseable {
     }
 
     /**
-     * Adds a Data Channel on a Peer Connection.
-     * The Peer Connection does not need to be connected, however,
-     * the Data Channel will be open only when the Peer Connection is connected.
+     * Adds a Data Channel on a Peer Connection. The Peer Connection does not need to be connected, however, the Data Channel will be open only when
+     * the Peer Connection is connected.
      *
      * @param label a user-defined UTF-8 string representing the Data Channel name
      * @param init  a structure of initialization settings
-     *
      * @return the created data channel
      */
     public RTCDataChannel createDataChannelEx(String label, DataChannelInitSettings init) {
@@ -273,13 +267,6 @@ public class RTCPeerConnection implements AutoCloseable {
         this.channels.put(dc, channel);
         return channel;
     }
-
-
-
-
-
-
-
 
     public boolean isClosed() {
         return this.peer == null;
