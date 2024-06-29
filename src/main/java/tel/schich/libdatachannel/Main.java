@@ -66,8 +66,16 @@ public class Main {
                 final var encoded = Base64.getEncoder().encodeToString(offer.sdp.getBytes());
                 // System.out.println("SDP:\n\n" + sdp);
                 System.out.println("Awaiting Answer...\n" + WEBSITE + "?sdp=" + encoded);
-                var remoteSdp = Main.readCompressedSdp();
+
+                String remoteSdp = Main.readCompressedSdp();
+                while (remoteSdp == null) {
+                    System.out.println("Invalid! Try again");
+                    remoteSdp = Main.readCompressedSdp();
+                }
                 System.out.println("Processing Answer...");
+                System.out.println("\n\n");
+                System.out.println(remoteSdp);
+                System.out.println("\n\n");
                 offer.answer(remoteSdp);
 
 
@@ -123,8 +131,9 @@ public class Main {
         if (remoteDescription.startsWith("v=")) {
             return remoteDescription;
         }
+        remoteDescription = remoteDescription.replaceAll("\n", "");
         String cValue = null;
-        String port = null;
+        String appPort = null;
         String fingerprint = null;
         String iceLine = null;
         String iceFrag = null;
@@ -136,15 +145,17 @@ public class Main {
                 fingerprint = IntStream.range(0, hex.length() / 2).mapToObj(i -> hex.substring(i * 2, i * 2 + 2)).collect(Collectors.joining(":"))
                         .toUpperCase();
             } else if (iceLine == null) {
-                iceLine = base64toHex(line);
+//                iceLine = base64toHex(line);
+                iceLine = line;
             } else if (iceFrag == null) {
-                iceFrag = base64toHex(line);
+//                iceFrag = base64toHex(line);
+                iceFrag = line;
             } else {
                 var ipv = line.substring(0, 1);
                 var type = "s".equals(line.substring(1, 2)) ? "srflx" : "host";
                 final var idIdx = line.indexOf("#");
                 var rawIp = line.substring(2, idIdx);
-                var id = line.substring(idIdx + 1, idIdx + 2);
+                var id = line.substring(idIdx + 1);
 
                 var ipWithPort = switch (ipv) {
                     case "4" -> {
@@ -169,8 +180,8 @@ public class Main {
 
                 if (ipWithPort != null) {
                     if (cValue == null) {
-                        cValue = ipWithPort.ip;
-                        port = ipWithPort.port;
+                        cValue = (ipWithPort.ip.contains(":") ? "IP6 " : "IP4 ") + ipWithPort.ip;
+                        appPort = ipWithPort.port;
                     }
                     final var s = ipWithPort.ip.contains(":") ? "::" : "0.0.0.0";
                     candidates.add(("a=candidate:%s 1 UDP %d %s %s typ %s raddr %s rport 0")
@@ -183,21 +194,31 @@ public class Main {
 //        System.out.println("ICE: " + iceLine + ":" + iceFrag);
         String cans = String.join("\n", candidates);
         System.out.println("CAN:\n" + cans);
+        if (cans.isEmpty()) {
+            return null;
+        }
 
         remoteDescription = """
                 v=0
                 o=- 1337 0 IN IP4 0.0.0.0
                 s=-
                 t=0 0
-                a=sendrecv
-                a=fingerprint:sha-256 %s
-                c=IN IP4 %s
-                %s
-                a=ice-pwd:%s
-                a=ice-ufrag:%s
+                a=group:BUNDLE 0
+                a=msid-semantic: WMS
                 m=application %s UDP webrtc-datachannel
+                a=sendrecv
+                c=IN %s
+                %s
+                a=end-of-candidates
+                a=ice-ufrag:%s
+                a=ice-pwd:%s
+                a=ice-options:trickle
+                a=fingerprint:sha-256 %s
                 a=setup:active
-                """.formatted(fingerprint, cValue, cans, iceLine, iceFrag, port)
+                a=mid:0
+                a=sctp-port:5000
+                a=max-message-size:262144
+                """.formatted(appPort, cValue, cans, iceFrag, iceLine, fingerprint)
         ;
         return remoteDescription;
     }
@@ -222,7 +243,6 @@ public class Main {
                     break;
                 }
                 out.append(line).append("\n");
-                break;
             } catch (IOException e) {
                 System.err.println("Error reading input");
             }

@@ -30,6 +30,7 @@ async function acceptOffer() {
         sdp: offer.value
     });
     await pc.setLocalDescription(await pc.createAnswer());
+    pc.onicegatheringstatechange = () => console.log(`Gathering state: ${pc.iceGatheringState}`);
     pc.onicecandidate = ({ candidate }) => {
         if (candidate) return;
         // Gathering complete
@@ -44,8 +45,8 @@ async function acceptOffer() {
         sdp = sdp.replaceAll(/a=candidate:.+typ (?!srflx|host).+\n/g, ""); // must contain srflx or host
 
         let fingerPrint = hexToBase64(/a=fingerprint:sha-256 (.+)\n/g.exec(sdp)[1].replaceAll(":", ""));
-        let icePwd = hexToBase64(/a=ice-pwd:(.+)\n/g.exec(sdp)[1]);
-        let iceUfrag = hexToBase64(/a=ice-ufrag:(.+)\n/g.exec(sdp)[1]);
+        let icePwd = /a=ice-pwd:(.+)\n/g.exec(sdp)[1];
+        let iceUfrag = /a=ice-ufrag:(.+)\n/g.exec(sdp)[1];
         let shortSdp = `${fingerPrint}.${icePwd}.${iceUfrag}`
         let candidatePattern = /a=candidate:([0-9]+) 1 (?:UDP|udp) [0-9]+ ([^ ]+) ([0-9]+) typ (srflx|host) .+\n/g;
         let match;
@@ -88,6 +89,10 @@ const config = {
 };
 const pc = new RTCPeerConnection(config);
 
+window.onbeforeunload = () => {
+    pc.close();
+};
+
 pc.ondatachannel = (event) => {
     channel = event.channel;
     channel.onopen = e => {
@@ -113,16 +118,20 @@ pc.ondatachannel = (event) => {
 
     };
     channel.onmessage = (event) => {
-        if (event.data instanceof Blob) {
+        if (event.data instanceof Blob || event.data instanceof ArrayBuffer) {
+            let data = event.data;
+            if (data instanceof ArrayBuffer) {
+                data = new Blob([data])
+            }
             const reader = new FileReader();
             reader.onload = () => {
                 output.innerHTML += `<br>You: <a href="${reader.result}" download="test.png">[file:${event.data.size}b]</a>`;
                 channel.send("File received");
                 log("Me:  File received")
                 channel.send(event.data);
-                log(`Me:  [file:${event.data.size}b]`);
+                log(`Me:  [file:${data.size}b]`);
             }
-            reader.readAsDataURL(event.data);
+            reader.readAsDataURL(data);
         } else {
             log("You: " + event.data);
         }
@@ -161,6 +170,7 @@ offer.onkeyup = acceptOffer
 
 pc.onconnectionstatechange = ev => handleChange();
 pc.oniceconnectionstatechange = ev => handleChange();
+pc.onclose = ev => log("!!! We are closed up !!!")
 
 function handleChange() {
     let stat2 = document.getElementById('stat2');

@@ -58,11 +58,14 @@ public class RTCPeerConnection implements AutoCloseable {
         // Blocks until all callbacks have returned (except a callback calling this)
         final var closed = INSTANCE.rtcClosePeerConnection(this.peer);
         if (closed < 0) {
-            throw new IllegalStateException("Error closing peer connection: " + closed);
+            throw new IllegalStateException("Error closing peer connection: " + this.peer + " err: " + closed);
+        }
+        if (this.peer == null) {
+            return;
         }
         final var deleted = INSTANCE.rtcDeletePeerConnection(this.peer);
         if (deleted < 0) {
-            throw new IllegalStateException("Error deleting peer connection: " + deleted);
+            throw new IllegalStateException("Error deleting peer connection: " + this.peer + " err: " + deleted);
         }
         this.peer = null;
     }
