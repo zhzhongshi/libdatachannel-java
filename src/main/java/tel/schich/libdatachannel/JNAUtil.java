@@ -28,7 +28,9 @@ public class JNAUtil {
         if (code < 0) {
             throw new IllegalStateException("Error: " + code);
         }
-        // TODO remove null byte?
-        return new String(buffer.array());
+
+        final var bytes = new byte[code - 1];
+        buffer.get(bytes, 0, code - 1);
+        return new String(bytes);
     }
 }

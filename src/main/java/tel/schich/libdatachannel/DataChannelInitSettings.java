@@ -7,13 +7,15 @@ public class DataChannelInitSettings {
 
     final rtcDataChannelInit innerInit;
 
+
     public DataChannelInitSettings() {
         innerInit = new rtcDataChannelInit();
         innerInit.reliability = new rtcReliability();
     }
 
-    public DataChannelInitSettings(final rtcReliability reliability) {
-        this(); // TODO init
+    public DataChannelInitSettings reliability(DataChannelReliability reliability) {
+        innerInit.reliability = reliability.innerReliability;
+        return this;
     }
 
     /**

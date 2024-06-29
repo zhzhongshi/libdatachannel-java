@@ -8,11 +8,17 @@ import java.util.Map;
 
 public class RTCPeerConnection implements AutoCloseable {
 
-    private static final int RTC_ERR_SUCCESS = 0;
-
     private Integer peer;
     private Map<Integer, RTCDataChannel> channels = new HashMap<>();
 
+    /**
+     * Creates a Peer Connection.
+     *
+     * Remember to {@link #close()} when done.
+     *
+     * @param config the peer configuration
+     * @return the peer connection
+     */
     public static RTCPeerConnection createPeer(RTCConfiguration config) {
         final var peer = new RTCPeerConnection();
         final var code = INSTANCE.rtcCreatePeerConnection(config.innerCfg);
@@ -23,6 +29,20 @@ public class RTCPeerConnection implements AutoCloseable {
         return peer;
     }
 
+    public static void initLogger(LogLevel level) {
+        // TODO slf4j?
+        INSTANCE.rtcInitLogger(level.level, (lvl, msg) -> System.out.println(lvl + ": " + msg));
+    }
+
+    public static void preload() {
+        INSTANCE.rtcPreload();
+    }
+
+    public static void cleanup() {
+        // TODO must never call from callback
+        INSTANCE.rtcCleanup();
+    }
+
     /**
      * If it is not already closed, the Peer Connection is implicitly closed before being deleted. After this function has been called, pc must not be
      * used in a function call anymore. This function will block until all scheduled callbacks of pc return (except the one this function might be
@@ -30,6 +50,9 @@ public class RTCPeerConnection implements AutoCloseable {
      */
     @Override
     public void close() {
+        if (this.peer == null) {
+            return;
+        }
         // TODO close channels explicitly?
 
         // Blocks until all callbacks have returned (except a callback calling this)
@@ -44,6 +67,9 @@ public class RTCPeerConnection implements AutoCloseable {
         this.peer = null;
     }
 
+    /**
+     * Closes all Data Channels.
+     */
     public void closeChannels() {
         for (final RTCDataChannel value : channels.values()) {
             value.close();
@@ -128,20 +154,20 @@ public class RTCPeerConnection implements AutoCloseable {
         return JNAUtil.readStringWithBuffer((buff, size) -> INSTANCE.rtcGetRemoteDescriptionType(this.peer, buff, size));
     }
 
-    public void addRemoteCandidate(String canditate) {
-        var code = INSTANCE.rtcAddRemoteCandidate(this.peer, canditate, null);
+    public void addRemoteCandidate(String candidate) {
+        var code = INSTANCE.rtcAddRemoteCandidate(this.peer, candidate, null);
     }
 
     /**
      * Adds a trickled remote candidate received from the remote peer by the user's method of choice. The Peer Connection must have a remote
      * description set.
      *
-     * @param canditate a null-terminated SDP string representing the candidate (with or without the "a=" prefix)
+     * @param candidate a null-terminated SDP string representing the candidate (with or without the "a=" prefix)
      * @param mid       (optional): a null-terminated string representing the mid of the candidate in the remote SDP description or NULL for
      *                  autodetection
      */
-    public void addRemoteCandidate(String canditate, String mid) {
-        var code = INSTANCE.rtcAddRemoteCandidate(this.peer, canditate, mid);
+    public void addRemoteCandidate(String candidate, String mid) {
+        var code = INSTANCE.rtcAddRemoteCandidate(this.peer, candidate, mid);
     }
 
     /**
@@ -165,7 +191,7 @@ public class RTCPeerConnection implements AutoCloseable {
      */
     public URI remoteAddress() {
         final var localAddress = JNAUtil.readStringWithBuffer((buff, size) -> INSTANCE.rtcGetRemoteAddress(this.peer, buff, size));
-        return URI.create(localAddress);
+        return URI.create("udp://" +localAddress);
     }
 
     /**
@@ -212,7 +238,7 @@ public class RTCPeerConnection implements AutoCloseable {
     }
 
     public void onDataChannel(PeerCallbacks.DataChannel cb) {
-        INSTANCE.rtcSetDataChannelCallback(this.peer, (pc, dc, ptr) -> {
+        final var code = INSTANCE.rtcSetDataChannelCallback(this.peer, (pc, dc, ptr) -> {
             cb.handleDC(this, channels.get(dc));
         });
     }

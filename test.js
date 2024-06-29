@@ -32,15 +32,14 @@ async function acceptOffer() {
     await pc.setLocalDescription(await pc.createAnswer());
     pc.onicecandidate = ({ candidate }) => {
         if (candidate) return;
+        // Gathering complete
         answer.focus();
         let sdp = pc.localDescription.sdp;
         // Cleanup Candidates
 
         console.log("SDP:");
         sdp = sdp.replaceAll("\r\n", "\n")
-
         console.log(sdp)
-
         sdp = sdp.replaceAll(/a=candidate.+\.local.+\n/g, ""); // no local
         sdp = sdp.replaceAll(/a=candidate:.+typ (?!srflx|host).+\n/g, ""); // must contain srflx or host
 
@@ -48,13 +47,14 @@ async function acceptOffer() {
         let icePwd = hexToBase64(/a=ice-pwd:(.+)\n/g.exec(sdp)[1]);
         let iceUfrag = hexToBase64(/a=ice-ufrag:(.+)\n/g.exec(sdp)[1]);
         let shortSdp = `${fingerPrint}.${icePwd}.${iceUfrag}`
-        let candidatePattern = /a=candidate:([0-9]+) 1 UDP [0-9]+ ([^ ]+) ([0-9]+) typ (srflx|host) .+\n/g;
+        let candidatePattern = /a=candidate:([0-9]+) 1 (?:UDP|udp) [0-9]+ ([^ ]+) ([0-9]+) typ (srflx|host) .+\n/g;
         let match;
         while (match = candidatePattern.exec(sdp)) {
             let id = match[1];
             let ip = match[2]
             let port = match[3];
             let type = match[4];
+            console.log("candidate", id, ip, port, type);
             type = type === "srflx" ? type = "s" : type = "h";
             if (ip.includes(":")) {
                 shortSdp += '.6' + type + ipv6ToBase64(ip) + ":" + port + "#" + id;
@@ -62,9 +62,7 @@ async function acceptOffer() {
                 shortSdp += '.4' + type + btoa(ip + ":" + port).replaceAll(/=+$/g, "") + "#" + id
             }
         }
-
         console.log(shortSdp)
-        console.log(btoa(shortSdp))
         answer.value = shortSdp;
         fullAnswer.value = sdp;
 
@@ -89,22 +87,44 @@ const config = {
     }]
 };
 const pc = new RTCPeerConnection(config);
+
 pc.ondatachannel = (event) => {
     channel = event.channel;
     channel.onopen = e => {
-        console.log("We are connected!")
+        console.log("OPEN", e)
+        console.log(channel)
+        console.log("We are connected!", channel.protocol, channel.peerIdentity)
+
+        pc.getStats(null).then((stats) => {
+            let selectedPair= {}
+            stats.forEach((report) => {
+                if (report.selected) {
+                    selectedPair = {
+                        local: report.localCandidateId,
+                        remote: report.remoteCandidateId
+                    };
+                }
+                if (report.id === selectedPair.local)
+                    console.log("local" ,report.address)
+                if (report.id === selectedPair.remote)
+                    console.log("remote" ,report.address)
+            });
+        });
+
     };
     channel.onmessage = (event) => {
         if (event.data instanceof Blob) {
             const reader = new FileReader();
             reader.onload = () => {
-                output.innerHTML += `<a href="${reader.result}" download="test.png">Download File</a>`;
+                output.innerHTML += `<br>You: <a href="${reader.result}" download="test.png">[file:${event.data.size}b]</a>`;
+                channel.send("File received");
+                log("Me:  File received")
+                channel.send(event.data);
+                log(`Me:  [file:${event.data.size}b]`);
             }
             reader.readAsDataURL(event.data);
-            channel.send("File received");
-            channel.send(event.data);
         } else {
-            log(event.data);
+            log("You: " + event.data);
         }
     };
 };
@@ -114,7 +134,7 @@ pc.oniceconnectionstatechange = e => log(pc.iceConnectionState);
 chat.onkeypress = function (e) {
     if (e.keyCode != 13) return;
     channel.send(chat.value);
-    log(chat.value);
+    log("Me:  " + chat.value);
     chat.value = "";
 };
 

@@ -10,73 +10,116 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Main {
 
+    public record Offer(RTCDataChannel channel, String sdp) implements AutoCloseable {
+
+        public void answer(String remoteSdp) {
+            channel.peer().setAnswer(remoteSdp);
+        }
+
+        public CompletableFuture<Void> closeFuture() {
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            this.channel.onClose(c -> future.completeAsync(() -> null));
+            this.channel.peer().onStateChange((peer, state) -> {
+                if (state == RTCPeerConnection.PeerState.RTC_CLOSED) {
+                    peer.close();
+                    future.completeAsync(() -> null);
+                }
+            });
+            return future;
+        }
+
+        @Override
+        public void close() {
+            this.channel.peer().close();
+        }
+
+        public static CompletableFuture<Offer> create(String label, RTCConfiguration cfg) {
+            var peer = RTCPeerConnection.createPeer(cfg);
+            final var offer = new CompletableFuture<Offer>();
+            final var channel = peer.createDataChannel(label);
+            peer.onGatheringStateChange((pc, state) -> {
+                System.out.println(state);
+                if (state == RTCPeerConnection.GatheringState.RTC_GATHERING_COMPLETE) {
+                    offer.complete(new Offer(channel, peer.localDescription()));
+                }
+            });
+            return offer;
+        }
+    }
+
     static final String WEBSITE = "http://localhost:8080/libdatachannel-java/test.html";
 
     public static void main(String[] args) {
-        LibDataChannel.setLogLevel(LibDataChannel.LogLevel.RTC_LOG_WARNING);
+        RTCPeerConnection.initLogger(LogLevel.RTC_LOG_ERROR);
         final var cfg = RTCConfiguration.of("stun.l.google.com:19302");
         while (true) {
-            try (var pc = RTCPeerConnection.createPeer(cfg)) {
-                final var future = channelFuture(pc);
-                System.out.println(future.join());
+            try (var offer = Offer.create("test", cfg).join()) {
+                offer.channel.onOpen(Main::handleOpen);
+                offer.channel.onMessage(Main::handleMessage);
+                offer.channel.onError(Main::handleError);
+                offer.channel.peer().onStateChange(Main::handleStateChange);
+                final var encoded = Base64.getEncoder().encodeToString(offer.sdp.getBytes());
+                // System.out.println("SDP:\n\n" + sdp);
+                System.out.println("Awaiting Answer...\n" + WEBSITE + "?sdp=" + encoded);
+                var remoteSdp = Main.readCompressedSdp();
+                System.out.println("Processing Answer...");
+                offer.answer(remoteSdp);
+
+
+
+                offer.closeFuture().join();
             }
+            System.out.println("closed!");
         }
 
     }
 
-    private static CompletableFuture<String> channelFuture(final RTCPeerConnection pc) {
-        final var channel = pc.createDataChannel("test");
-        channel.onOpen(c -> {
-            System.out.println("Connection Open!");
-            c.sendMessage("Hello There!");
-            try {
-                c.sendMessage(Files.readAllBytes(Path.of("img.png")));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
-        channel.onMessage((c, message, size) -> {
-            if (size < 0) {
-                System.out.println("In: " + new String(message));
-                c.sendMessage("You said things...");
+    private static void handleStateChange(final RTCPeerConnection pc, final RTCPeerConnection.PeerState state) {
+        System.out.println(state);
+        if (state == RTCPeerConnection.PeerState.RTC_CONNECTED) {
+            final var uri = pc.remoteAddress();
+            System.out.println("Connected to " + uri.getHost() + ":" + uri.getPort());
+        }
+    }
+
+    private static void handleError(final RTCDataChannel c, final String error) {
+        System.out.println("Error: " + error);
+    }
+
+    private static void handleMessage(final RTCDataChannel c, final byte[] message, final int size) {
+        if (size < 0) {
+            final var msg = new String(message);
+            System.out.println("In: " + msg);
+            if (msg.equals("exit")) {
+                c.sendMessage("Bye!");
+                System.out.println("Ok we are done");
+                c.close();
             } else {
-                c.sendMessage("What is this file?");
-                System.out.println("Got a file");
+                c.sendMessage("You said things...");
             }
-        });
+        } else {
+            c.sendMessage("What is this file?");
+            System.out.println("Got a file");
+        }
+    }
 
-        CompletableFuture<String> future = new CompletableFuture<>();
-        channel.onClose(c -> future.completeAsync(() -> "closed!!"));
-
+    private static void handleOpen(final RTCDataChannel c) {
+        System.out.println("Connection Open!");
+        c.sendMessage("Hello There!");
         try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
+            c.sendMessage(Files.readAllBytes(Path.of("img.png")));
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-        final var localSdp2 = pc.localDescription();
-        var encoded = Base64.getEncoder().encodeToString(localSdp2.getBytes());
-
-        System.out.println("SDP:\n\n" + localSdp2);
-        System.out.println("Awaiting RemoteDescription...");
-        System.out.println(WEBSITE + "?sdp=" + encoded);
-
-        var remoteDescription = readInput();
-        remoteDescription = Main.readCompressed(remoteDescription);
-        System.out.println("Processing Answer...\n" + remoteDescription);
-
-        pc.setAnswer(remoteDescription);
-        return future;
     }
 
-    static String readCompressed(String remoteDescription) {
+    static String readCompressedSdp() {
+        var remoteDescription = readInput();
         if (remoteDescription.startsWith("v=")) {
             return remoteDescription;
         }
@@ -94,7 +137,6 @@ public class Main {
                         .toUpperCase();
             } else if (iceLine == null) {
                 iceLine = base64toHex(line);
-                ;
             } else if (iceFrag == null) {
                 iceFrag = base64toHex(line);
             } else {
@@ -130,26 +172,17 @@ public class Main {
                         cValue = ipWithPort.ip;
                         port = ipWithPort.port;
                     }
-                    candidates.add("a=candidate:%s 1 UDP %d %s %s typ %s raddr 0.0.0.0 rport 0"
-                            .formatted(id, nCandidate++, ipWithPort.ip, ipWithPort.port, type));
+                    final var s = ipWithPort.ip.contains(":") ? "::" : "0.0.0.0";
+                    candidates.add(("a=candidate:%s 1 UDP %d %s %s typ %s raddr %s rport 0")
+                            .formatted(id, nCandidate++, ipWithPort.ip, ipWithPort.port, type, s));
                 }
 
             }
         }
-        System.out.println("FP: " + fingerprint);
-        System.out.println("ICE: " + iceLine + ":" + iceFrag);
-        System.out.println("CAN: " + candidates);
-        // id, prio, ip, port, type
-        var candidatePattern = Pattern.compile("([0-9]+)#(.+)#([0-9]+)#(.+)");
-        AtomicInteger n = new AtomicInteger(0);
-        String cans = candidates.stream().map(candidate -> {
-            final var matcher = candidatePattern.matcher(candidate);
-            if (matcher.find()) {
-                return "a=candidate:%s 1 UDP %d %s %s typ %s raddr 0.0.0.0 rport 0".formatted(matcher.group(1), n.getAndIncrement(), matcher.group(2),
-                        matcher.group(3), matcher.group(4));
-            }
-            return "";
-        }).filter(String::isBlank).collect(Collectors.joining("\n"));
+//        System.out.println("FP: " + fingerprint);
+//        System.out.println("ICE: " + iceLine + ":" + iceFrag);
+        String cans = String.join("\n", candidates);
+        System.out.println("CAN:\n" + cans);
 
         remoteDescription = """
                 v=0

@@ -8,6 +8,7 @@ import generated.rtcReliability;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 public class RTCDataChannel implements AutoCloseable {
@@ -196,11 +197,10 @@ public class RTCDataChannel implements AutoCloseable {
     // TODO rtcGetTrackMid? on Track obj
     // TODO rtcGetTrackDirection? on Track obj
 
-    public DataChannelInitSettings reliability() {
+    public DataChannelReliability reliability() {
         final var inner = new rtcReliability();
         INSTANCE.rtcGetDataChannelReliability(this.channel, inner);
-        // TODO separate class & fill it
-        return new DataChannelInitSettings(inner);
+        return new DataChannelReliability(inner);
     }
 
 
