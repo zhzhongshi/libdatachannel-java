@@ -3,7 +3,7 @@ import static tel.schich.libdatachannel.GatheringState.RTC_GATHERING_COMPLETE;
 import tel.schich.libdatachannel.DataChannel;
 import tel.schich.libdatachannel.LogLevel;
 import tel.schich.libdatachannel.PeerConnection;
-import tel.schich.libdatachannel.PeerConnectionConfiguratino;
+import tel.schich.libdatachannel.PeerConnectionConfiguration;
 import tel.schich.libdatachannel.PeerState;
 
 import java.io.BufferedReader;
@@ -22,7 +22,7 @@ import java.util.stream.IntStream;
 public class Main {
 
     public static void main2(String[] args) {
-        final var cfg = PeerConnectionConfiguratino.of("stun.l.google.com:19302");
+        final var cfg = PeerConnectionConfiguration.of("stun.l.google.com:19302");
         // try with resources to cleanup peer when done
         try (var peer = PeerConnection.createPeer(cfg)) {
             // when complete send sdp to remote peer
@@ -70,7 +70,7 @@ public class Main {
             this.channel.peer().close();
         }
 
-        public static CompletableFuture<Offer> create(String label, PeerConnectionConfiguratino cfg) {
+        public static CompletableFuture<Offer> create(String label, PeerConnectionConfiguration cfg) {
             var peer = PeerConnection.createPeer(cfg);
             final var offer = new CompletableFuture<Offer>();
             final var channel = peer.createDataChannel(label);
@@ -88,7 +88,7 @@ public class Main {
 
     public static void main(String[] args) {
         PeerConnection.initLogger(LogLevel.RTC_LOG_ERROR);
-        final var cfg = PeerConnectionConfiguratino.of("stun.l.google.com:19302");
+        final var cfg = PeerConnectionConfiguration.of("stun.l.google.com:19302");
         while (true) {
             try (var offer = Offer.create("test", cfg).join()) {
                 offer.channel.onOpen(Main::handleOpen);

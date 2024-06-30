@@ -118,8 +118,8 @@ public class DataChannel implements AutoCloseable {
      */
     @Override
     public void close() {
-        INSTANCE.rtcClose(this.channel);
-        INSTANCE.rtcDelete(this.channel);
+        Util.wrapError(INSTANCE.rtcClose(this.channel));
+        Util.wrapError(INSTANCE.rtcDelete(this.channel));
         this.channel = null;
     }
 
@@ -238,12 +238,6 @@ public class DataChannel implements AutoCloseable {
         return JNAUtil.readStringWithBuffer(((buff, size) -> INSTANCE.rtcGetDataChannelProtocol(this.channel, buff, size)));
     }
 
-    // TODO rtcAddTrack
-    // TODO rtcDeleteTrack?
-    // TODO rtcGetTrackDescription?
-    // TODO rtcGetTrackMid?
-    // TODO rtcGetTrackDirection?
-
     /**
      * Returns the configured {@link DataChannelReliability} of this channel
      *
@@ -254,5 +248,17 @@ public class DataChannel implements AutoCloseable {
         Util.wrapError(INSTANCE.rtcGetDataChannelReliability(this.channel, inner));
         return new DataChannelReliability(inner);
     }
+
+
+    // Adds a new Track on a Peer Connection. The Peer Connection does not need to be connected, however, the Track will be open only when the Peer Connection is connected.
+    // sdp: a null-terminated string specifying the corresponding media SDP. It must start with a m-line and include a mid parameter.
+    @SuppressWarnings("deprecation")
+    public Track addTrack(String sdp) {
+        // TODO implement me
+        final var track = Util.wrapError(INSTANCE.rtcAddTrack(this.channel, sdp));
+        // TODO final var track = Util.wrapError(INSTANCE.rtcAddTrackEx(this.channel, sdp));
+        return new Track(track, this);
+    }
+
 
 }

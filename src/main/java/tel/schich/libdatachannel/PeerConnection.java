@@ -21,7 +21,7 @@ public class PeerConnection implements AutoCloseable {
      * @param config the peer configuration
      * @return the peer connection
      */
-    public static PeerConnection createPeer(PeerConnectionConfiguratino config) {
+    public static PeerConnection createPeer(PeerConnectionConfiguration config) {
         final var peer = new PeerConnection();
         final var code = INSTANCE.rtcCreatePeerConnection(config.innerCfg);
         peer.peer = code;
