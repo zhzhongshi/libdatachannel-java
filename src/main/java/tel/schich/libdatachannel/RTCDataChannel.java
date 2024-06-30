@@ -8,7 +8,6 @@ import generated.rtcReliability;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
 public class RTCDataChannel implements AutoCloseable {
@@ -33,30 +32,35 @@ public class RTCDataChannel implements AutoCloseable {
         }
     }
 
-    public void onOpen(ChannelCallbacks.Open cb) {
+    /**
+     *
+     *
+     * @param cb the callback or null to remove it
+     */
+    public void onOpen(DataChannelCallbacks.Open cb) {
         this.registerCallback(INSTANCE::rtcSetOpenCallback, cb, (id, ptr) -> cb.onOpen(this));
     }
 
-    public void onClose(ChannelCallbacks.Close cb) {
+    public void onClose(DataChannelCallbacks.Close cb) {
         this.registerCallback(INSTANCE::rtcSetClosedCallback, cb, (id, ptr) -> cb.onClose(this));
     }
 
-    public void onError(ChannelCallbacks.Error cb) {
+    public void onError(DataChannelCallbacks.Error cb) {
         this.registerCallback(INSTANCE::rtcSetErrorCallback, cb, (id, error, ptr) -> cb.onError(this, error.getString(0)));
     }
 
-    public void onMessage(ChannelCallbacks.Message cb) {
+    public void onMessage(DataChannelCallbacks.Message cb) {
         // TODO binary message?
         this.registerCallback(INSTANCE::rtcSetMessageCallback, cb, (id, message, size, ptr) -> {
             cb.onMessage(this, size < 0 ? message.getString(0).getBytes() : message.getByteArray(0, size), size);
         });
     }
 
-    public void onBufferedAmountLow(ChannelCallbacks.BufferedAmountLow cb) {
+    public void onBufferedAmountLow(DataChannelCallbacks.BufferedAmountLow cb) {
         this.registerCallback(INSTANCE::rtcSetBufferedAmountLowCallback, cb, (id, ptr) -> cb.onBufferedAmountLow(this));
     }
 
-    public void onAvailable(ChannelCallbacks.Available cb) {
+    public void onAvailable(DataChannelCallbacks.Available cb) {
         this.registerCallback(INSTANCE::rtcSetAvailableCallback, cb, (id, ptr) -> cb.onAvailable(this));
     }
 
@@ -204,37 +208,4 @@ public class RTCDataChannel implements AutoCloseable {
     }
 
 
-    interface ChannelCallbacks {
-
-        @FunctionalInterface
-        interface Open {
-            void onOpen(RTCDataChannel channel);
-        }
-
-        @FunctionalInterface
-        interface Close {
-            void onClose(RTCDataChannel channel);
-        }
-
-        @FunctionalInterface
-        interface Error {
-            void onError(RTCDataChannel channel, final String error);
-        }
-
-        @FunctionalInterface
-        interface Message {
-            void onMessage(RTCDataChannel channel, final byte[] message, final int size);
-        }
-
-        @FunctionalInterface
-        interface BufferedAmountLow {
-            void onBufferedAmountLow(RTCDataChannel channel);
-        }
-
-        @FunctionalInterface
-        interface Available {
-            void onAvailable(RTCDataChannel channel);
-        }
-
-    }
 }

@@ -236,7 +236,7 @@ public class RTCPeerConnection implements AutoCloseable {
 
     public void onGatheringStateChange(PeerCallbacks.GatheringStateChange cb) {
         INSTANCE.rtcSetGatheringStateChangeCallback(this.peer, (pc, state, ptr) -> {
-            cb.handleGatherChange(this, RTCPeerConnection.GatheringState.of(state));
+            cb.handleGatherChange(this, GatheringState.of(state));
         });
     }
 
@@ -299,83 +299,6 @@ public class RTCPeerConnection implements AutoCloseable {
 
     public boolean isClosed() {
         return this.peer == null;
-    }
-
-    public interface PeerCallbacks {
-
-        @FunctionalInterface
-        interface LocalDescription {
-
-            void handleDescription(RTCPeerConnection peer, String sdp, String type);
-        }
-
-        @FunctionalInterface
-        interface LocalCandidate {
-
-            void handleCandidate(RTCPeerConnection peer, String candidate, String mediaId);
-        }
-
-        @FunctionalInterface
-        interface StateChange {
-
-            void handleChange(RTCPeerConnection peer, PeerState state);
-        }
-
-        @FunctionalInterface
-        interface GatheringStateChange {
-
-            void handleGatherChange(RTCPeerConnection peer, RTCPeerConnection.GatheringState state);
-        }
-
-        @FunctionalInterface
-        interface DataChannel {
-
-            void handleDC(RTCPeerConnection peer, RTCDataChannel channel);
-        }
-
-        @FunctionalInterface
-        interface Track {
-
-            void handleTrack(RTCPeerConnection peer, int track); // TODO track object?
-        }
-    }
-
-    public enum PeerState {
-        RTC_CONNECTING(1),
-        RTC_CONNECTED(2),
-        RTC_DISCONNECTED(3),
-        RTC_FAILED(4),
-        RTC_CLOSED(5),
-        ;
-
-        private static final Map<Integer, PeerState> MAP = Util.mappedEnum(PeerState.values(), s -> s.state);
-
-        private final int state;
-
-        PeerState(int state) {
-            this.state = state;
-        }
-
-        public static PeerState of(final int state) {
-            return MAP.get(state);
-        }
-    }
-
-    public enum GatheringState {
-        RTC_GATHERING_INPROGRESS(1),
-        RTC_GATHERING_COMPLETE(2),
-        ;
-
-        private static final Map<Integer, GatheringState> MAP = Util.mappedEnum(RTCPeerConnection.GatheringState.values(), s -> s.state);
-        private final int state;
-
-        GatheringState(int state) {
-            this.state = state;
-        }
-
-        public static GatheringState of(final int state) {
-            return MAP.get(state);
-        }
     }
 
 }

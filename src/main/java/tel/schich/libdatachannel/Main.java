@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import static tel.schich.libdatachannel.GatheringState.RTC_GATHERING_COMPLETE;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -15,6 +17,32 @@ import java.util.stream.IntStream;
 
 public class Main {
 
+    public static void main2(String[] args) {
+        final var cfg = RTCConfiguration.of("stun.l.google.com:19302");
+        // try with resources to cleanup peer when done
+        try (var peer = RTCPeerConnection.createPeer(cfg)) {
+            // when complete send sdp to remote peer
+            peer.onGatheringStateChange((pc, state) -> {
+                if (RTC_GATHERING_COMPLETE == state) {
+                    final var sdp = pc.localDescription();
+                    System.out.println(sdp);
+                }
+            });
+            // create data channel
+            final var channel = peer.createDataChannel("test");
+            // wait for local sdp...
+            // then set answer from remote peer
+            peer.setAnswer(readInput());
+            // register message callback (negative size indicates a null-terminated string otherwise binary data)
+            channel.onMessage((c, message, size) -> System.out.println("Incoming message: " + new String(message)));
+            // block until channel is closed
+            CompletableFuture<Void> future = new CompletableFuture<>();
+            channel.onClose(c -> future.completeAsync(() -> null));
+            future.join();
+        }
+
+    }
+
     public record Offer(RTCDataChannel channel, String sdp) implements AutoCloseable {
 
         public void answer(String remoteSdp) {
@@ -25,7 +53,7 @@ public class Main {
             CompletableFuture<Void> future = new CompletableFuture<>();
             this.channel.onClose(c -> future.completeAsync(() -> null));
             this.channel.peer().onStateChange((peer, state) -> {
-                if (state == RTCPeerConnection.PeerState.RTC_CLOSED) {
+                if (state == PeerState.RTC_CLOSED) {
                     peer.close();
                     future.completeAsync(() -> null);
                 }
@@ -44,7 +72,7 @@ public class Main {
             final var channel = peer.createDataChannel(label);
             peer.onGatheringStateChange((pc, state) -> {
                 System.out.println(state);
-                if (state == RTCPeerConnection.GatheringState.RTC_GATHERING_COMPLETE) {
+                if (state == RTC_GATHERING_COMPLETE) {
                     offer.complete(new Offer(channel, peer.localDescription()));
                 }
             });
@@ -79,7 +107,6 @@ public class Main {
                 offer.answer(remoteSdp);
 
 
-
                 offer.closeFuture().join();
             }
             System.out.println("closed!");
@@ -87,9 +114,9 @@ public class Main {
 
     }
 
-    private static void handleStateChange(final RTCPeerConnection pc, final RTCPeerConnection.PeerState state) {
+    private static void handleStateChange(final RTCPeerConnection pc, final PeerState state) {
         System.out.println(state);
-        if (state == RTCPeerConnection.PeerState.RTC_CONNECTED) {
+        if (state == PeerState.RTC_CONNECTED) {
             final var uri = pc.remoteAddress();
             System.out.println("Connected to " + uri.getHost() + ":" + uri.getPort());
         }
@@ -145,10 +172,10 @@ public class Main {
                 fingerprint = IntStream.range(0, hex.length() / 2).mapToObj(i -> hex.substring(i * 2, i * 2 + 2)).collect(Collectors.joining(":"))
                         .toUpperCase();
             } else if (iceLine == null) {
-//                iceLine = base64toHex(line);
+                //                iceLine = base64toHex(line);
                 iceLine = line;
             } else if (iceFrag == null) {
-//                iceFrag = base64toHex(line);
+                //                iceFrag = base64toHex(line);
                 iceFrag = line;
             } else {
                 var ipv = line.substring(0, 1);
@@ -190,8 +217,8 @@ public class Main {
 
             }
         }
-//        System.out.println("FP: " + fingerprint);
-//        System.out.println("ICE: " + iceLine + ":" + iceFrag);
+        //        System.out.println("FP: " + fingerprint);
+        //        System.out.println("ICE: " + iceLine + ":" + iceFrag);
         String cans = String.join("\n", candidates);
         System.out.println("CAN:\n" + cans);
         if (cans.isEmpty()) {

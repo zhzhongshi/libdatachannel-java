@@ -5,6 +5,7 @@ import generated.rtcConfiguration;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,21 +20,17 @@ public class RTCConfiguration {
      *
      * Each entry in iceServers must match the format [("stun"|"turn"|"turns") (":"|"://")][username ":" password "@"]hostname[":" port]["?transport=" ("udp"|"tcp"|"tls")]. The default scheme is STUN, the default port is 3478 (5349 over TLS), and the default transport is UDP. For instance, a STUN server URI could be mystunserver.org, and a TURN server URI could be turn:myuser:12345678@turnserver.org. Note transports TCP and TLS are only available for a TURN server with libnice as ICE backend and govern only the TURN control connection, meaning relaying is always performed over UDP.
      */
-    RTCConfiguration iceServers(String iceServce) {
-        // TODO multiple servers?
-        this.innerCfg.iceServers = new PointerByReference(JNAUtil.toPointer(iceServce));
-        this.innerCfg.iceServersCount = 1;
+    RTCConfiguration iceServers(String... iceServer) {
+        // TODO multiple servers is not working
+        this.innerCfg.iceServers = new PointerByReference(JNAUtil.toPointerArray(iceServer));
+        this.innerCfg.iceServersCount = iceServer.length;
         return this;
     }
 
     List<String> iceServers() {
-        if (this.innerCfg.iceServersCount == 1) {
-            final var server = this.innerCfg.iceServers.getValue().getString(0);
-        } else {
-            return List.of();
-        }
-        // TODO multiple servers?
-        throw new UnsupportedOperationException("TODO multiple servers");
+        // TODO multiple servers is not working
+        final var serverList = this.innerCfg.iceServers.getValue().getString(0);
+        return Arrays.stream(serverList.split(String.valueOf((char) 0))).filter(s -> !s.isEmpty()).toList();
     }
 
     /**
