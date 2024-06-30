@@ -2,6 +2,9 @@ package tel.schich.libdatachannel;
 
 import generated.rtcReliability;
 
+/**
+ * The {@link DataChannel} reliability settings.
+ */
 public class DataChannelReliability {
 
     rtcReliability innerReliability;

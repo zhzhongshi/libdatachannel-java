@@ -2,7 +2,11 @@ package tel.schich.libdatachannel;
 
 import generated.rtcDataChannelInit;
 import generated.rtcReliability;
+import tel.schich.libdatachannel.util.JNAUtil;
 
+/**
+ * The {@link DataChannel} initialization settings.
+ */
 public class DataChannelInitSettings {
 
     final rtcDataChannelInit innerInit;

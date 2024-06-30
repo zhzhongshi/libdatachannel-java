@@ -1,4 +1,4 @@
-package tel.schich.libdatachannel;
+package tel.schich.libdatachannel.util;
 
 import com.sun.jna.Memory;
 import com.sun.jna.Native;
@@ -32,15 +32,11 @@ public class JNAUtil {
     }
 
     public static String readStringWithBuffer(BiFunction<ByteBuffer, Integer, Integer> biFunc) {
-        final var bufferSize = biFunc.apply(null, -1);
+        var bufferSize = Util.wrapError(biFunc.apply(null, -1));
         final var buffer = ByteBuffer.allocate(bufferSize);
-        final var code = biFunc.apply(buffer, bufferSize);
-        if (code < 0) {
-            throw new IllegalStateException("Error: " + code);
-        }
-
-        final var bytes = new byte[code - 1];
-        buffer.get(bytes, 0, code - 1);
+        bufferSize = Util.wrapError(biFunc.apply(buffer, bufferSize));
+        final var bytes = new byte[bufferSize - 1];
+        buffer.get(bytes, 0, bufferSize - 1);
         return new String(bytes);
     }
 }

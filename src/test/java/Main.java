@@ -1,6 +1,10 @@
-package tel.schich.libdatachannel;
-
 import static tel.schich.libdatachannel.GatheringState.RTC_GATHERING_COMPLETE;
+
+import tel.schich.libdatachannel.DataChannel;
+import tel.schich.libdatachannel.LogLevel;
+import tel.schich.libdatachannel.PeerConnection;
+import tel.schich.libdatachannel.PeerConnectionConfiguratino;
+import tel.schich.libdatachannel.PeerState;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -18,9 +22,9 @@ import java.util.stream.IntStream;
 public class Main {
 
     public static void main2(String[] args) {
-        final var cfg = RTCConfiguration.of("stun.l.google.com:19302");
+        final var cfg = PeerConnectionConfiguratino.of("stun.l.google.com:19302");
         // try with resources to cleanup peer when done
-        try (var peer = RTCPeerConnection.createPeer(cfg)) {
+        try (var peer = PeerConnection.createPeer(cfg)) {
             // when complete send sdp to remote peer
             peer.onGatheringStateChange((pc, state) -> {
                 if (RTC_GATHERING_COMPLETE == state) {
@@ -43,7 +47,7 @@ public class Main {
 
     }
 
-    public record Offer(RTCDataChannel channel, String sdp) implements AutoCloseable {
+    public record Offer(DataChannel channel, String sdp) implements AutoCloseable {
 
         public void answer(String remoteSdp) {
             channel.peer().setAnswer(remoteSdp);
@@ -66,8 +70,8 @@ public class Main {
             this.channel.peer().close();
         }
 
-        public static CompletableFuture<Offer> create(String label, RTCConfiguration cfg) {
-            var peer = RTCPeerConnection.createPeer(cfg);
+        public static CompletableFuture<Offer> create(String label, PeerConnectionConfiguratino cfg) {
+            var peer = PeerConnection.createPeer(cfg);
             final var offer = new CompletableFuture<Offer>();
             final var channel = peer.createDataChannel(label);
             peer.onGatheringStateChange((pc, state) -> {
@@ -83,8 +87,8 @@ public class Main {
     static final String WEBSITE = "http://localhost:8080/libdatachannel-java/test.html";
 
     public static void main(String[] args) {
-        RTCPeerConnection.initLogger(LogLevel.RTC_LOG_ERROR);
-        final var cfg = RTCConfiguration.of("stun.l.google.com:19302");
+        PeerConnection.initLogger(LogLevel.RTC_LOG_ERROR);
+        final var cfg = PeerConnectionConfiguratino.of("stun.l.google.com:19302");
         while (true) {
             try (var offer = Offer.create("test", cfg).join()) {
                 offer.channel.onOpen(Main::handleOpen);
@@ -114,7 +118,7 @@ public class Main {
 
     }
 
-    private static void handleStateChange(final RTCPeerConnection pc, final PeerState state) {
+    private static void handleStateChange(final PeerConnection pc, final PeerState state) {
         System.out.println(state);
         if (state == PeerState.RTC_CONNECTED) {
             final var uri = pc.remoteAddress();
@@ -122,11 +126,11 @@ public class Main {
         }
     }
 
-    private static void handleError(final RTCDataChannel c, final String error) {
+    private static void handleError(final DataChannel c, final String error) {
         System.out.println("Error: " + error);
     }
 
-    private static void handleMessage(final RTCDataChannel c, final byte[] message, final int size) {
+    private static void handleMessage(final DataChannel c, final byte[] message, final int size) {
         if (size < 0) {
             final var msg = new String(message);
             System.out.println("In: " + msg);
@@ -143,7 +147,7 @@ public class Main {
         }
     }
 
-    private static void handleOpen(final RTCDataChannel c) {
+    private static void handleOpen(final DataChannel c) {
         System.out.println("Connection Open!");
         c.sendMessage("Hello There!");
         try {

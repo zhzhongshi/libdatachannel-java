@@ -2,6 +2,8 @@ package tel.schich.libdatachannel;
 
 import com.sun.jna.ptr.PointerByReference;
 import generated.rtcConfiguration;
+import tel.schich.libdatachannel.util.JNAUtil;
+import tel.schich.libdatachannel.util.Util;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -10,7 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-public class RTCConfiguration {
+public class PeerConnectionConfiguratino {
 
     rtcConfiguration innerCfg = new rtcConfiguration();
 
@@ -20,7 +22,7 @@ public class RTCConfiguration {
      *
      * Each entry in iceServers must match the format [("stun"|"turn"|"turns") (":"|"://")][username ":" password "@"]hostname[":" port]["?transport=" ("udp"|"tcp"|"tls")]. The default scheme is STUN, the default port is 3478 (5349 over TLS), and the default transport is UDP. For instance, a STUN server URI could be mystunserver.org, and a TURN server URI could be turn:myuser:12345678@turnserver.org. Note transports TCP and TLS are only available for a TURN server with libnice as ICE backend and govern only the TURN control connection, meaning relaying is always performed over UDP.
      */
-    RTCConfiguration iceServers(String... iceServer) {
+    PeerConnectionConfiguratino iceServers(String... iceServer) {
         // TODO multiple servers is not working
         this.innerCfg.iceServers = new PointerByReference(JNAUtil.toPointerArray(iceServer));
         this.innerCfg.iceServersCount = iceServer.length;
@@ -47,7 +49,7 @@ public class RTCConfiguration {
      *
      * If the username or password of an URI contains reserved special characters, they must be percent-encoded. In particular, ":" must be encoded as "%3A" and "@" must by encoded as "%40".
      */
-    RTCConfiguration proxyServer(URI proxy) {
+    PeerConnectionConfiguratino proxyServer(URI proxy) {
         this.innerCfg.proxyServer = JNAUtil.toPointer(proxy.toString());
         return this;
     }
@@ -68,7 +70,7 @@ public class RTCConfiguration {
     /**
      * (optional): if non-NULL, bind only to the given local address (ignored with libnice as ICE backend)
      */
-    RTCConfiguration bindAddress(URI bindAdress) {
+    PeerConnectionConfiguratino bindAddress(URI bindAdress) {
         this.innerCfg.bindAddress = JNAUtil.toPointer(bindAdress.toString());
         return this;
     }
@@ -107,7 +109,7 @@ public class RTCConfiguration {
     /**
      * (optional): certificate type, either RTC_CERTIFICATE_ECDSA or RTC_CERTIFICATE_RSA (0 or RTC_CERTIFICATE_DEFAULT if default)
      */
-    RTCConfiguration certificateType(CertificateType certificateType) {
+    PeerConnectionConfiguratino certificateType(CertificateType certificateType) {
         this.innerCfg.certificateType = certificateType.state;
         return this;
     }
@@ -137,7 +139,7 @@ public class RTCConfiguration {
      * (optional): ICE transport policy, if set to RTC_TRANSPORT_POLICY_RELAY, the PeerConnection will emit only relayed candidates (0 or
      * RTC_TRANSPORT_POLICY_ALL if default)
      */
-    RTCConfiguration iceTransportPolicy(IceTransportPolicy policy) {
+    PeerConnectionConfiguratino iceTransportPolicy(IceTransportPolicy policy) {
         this.innerCfg.iceTransportPolicy = policy.state;
         return this;
     }
@@ -149,7 +151,7 @@ public class RTCConfiguration {
     /**
      * if true, generate TCP candidates for ICE (ignored with libjuice as ICE backend)
      */
-    RTCConfiguration enableIceTcp(boolean enableIceTcp) {
+    PeerConnectionConfiguratino enableIceTcp(boolean enableIceTcp) {
         this.innerCfg.enableIceTcp = (byte) (enableIceTcp ? 1 : 0);
         return this;
     }
@@ -162,7 +164,7 @@ public class RTCConfiguration {
      * if true, connections are multiplexed on the same UDP port (should be combined with portRangeBegin and portRangeEnd, ignored with libnice as ICE
      * backend)
      */
-    RTCConfiguration enableIceUdpMux(boolean enableIceUdpMux) {
+    PeerConnectionConfiguratino enableIceUdpMux(boolean enableIceUdpMux) {
         this.innerCfg.enableIceUdpMux = (byte) (enableIceUdpMux ? 1 : 0);
         return this;
     }
@@ -174,7 +176,7 @@ public class RTCConfiguration {
     /**
      * if true, the user is responsible for calling rtcSetLocalDescription after creating a Data Channel and after setting the remote description
      */
-    RTCConfiguration disableAutoNegotiation(boolean disableAutoNegotiation) {
+    PeerConnectionConfiguratino disableAutoNegotiation(boolean disableAutoNegotiation) {
         this.innerCfg.enableIceUdpMux = (byte) (disableAutoNegotiation ? 1 : 0);
         return this;
     }
@@ -186,7 +188,7 @@ public class RTCConfiguration {
     /**
      * if true, the connection allocates the SRTP media transport even if no tracks are present (necessary to add tracks during later renegotiation)
      */
-    RTCConfiguration forceMediaTransport(boolean forceMediaTransport) {
+    PeerConnectionConfiguratino forceMediaTransport(boolean forceMediaTransport) {
         this.innerCfg.forceMediaTransport = (byte) (forceMediaTransport ? 1 : 0);
         return this;
     }
@@ -199,7 +201,7 @@ public class RTCConfiguration {
     /**
      * (optional): first port (included) of the allowed local port range (0 if unused)
      */
-    RTCConfiguration portRangeBegin(short portRangeBegin) {
+    PeerConnectionConfiguratino portRangeBegin(short portRangeBegin) {
         this.innerCfg.portRangeBegin = portRangeBegin;
         return this;
     }
@@ -212,7 +214,7 @@ public class RTCConfiguration {
     /**
      * (optional): last port (included) of the allowed local port (0 if unused)
      */
-    RTCConfiguration portRangeEnd(short portRangeEnd) {
+    PeerConnectionConfiguratino portRangeEnd(short portRangeEnd) {
         this.innerCfg.portRangeEnd = portRangeEnd;
         return this;
     }
@@ -224,12 +226,12 @@ public class RTCConfiguration {
     /**
      * (optional): manually set the Maximum Transfer Unit (MTU) for the connection (0 if automatic)
      */
-    RTCConfiguration mtu(int mtu) {
+    PeerConnectionConfiguratino mtu(int mtu) {
         this.innerCfg.mtu = mtu;
         return this;
     }
 
-    RTCConfiguration autoMtu() {
+    PeerConnectionConfiguratino autoMtu() {
         this.innerCfg.mtu = 0;
         return this;
     }
@@ -241,7 +243,7 @@ public class RTCConfiguration {
     /**
      * (optional): manually set the local maximum message size for Data Channels (0 if default)
      */
-    RTCConfiguration maxMessageSize(int maxMessageSize) {
+    PeerConnectionConfiguratino maxMessageSize(int maxMessageSize) {
         this.innerCfg.maxMessageSize = maxMessageSize;
         return this;
     }
@@ -251,8 +253,8 @@ public class RTCConfiguration {
     }
 
 
-    public static RTCConfiguration of(String iceServer) {
-        final var cfg = new RTCConfiguration();
+    public static PeerConnectionConfiguratino of(String iceServer) {
+        final var cfg = new PeerConnectionConfiguratino();
         cfg.innerCfg.iceServers = new PointerByReference(JNAUtil.toPointer(iceServer));
         cfg.innerCfg.forceMediaTransport = 0;
         cfg.innerCfg.iceServersCount = 1;

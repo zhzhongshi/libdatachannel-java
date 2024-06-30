@@ -1,7 +1,12 @@
 package tel.schich.libdatachannel;
 
+import tel.schich.libdatachannel.util.Util;
+
 import java.util.Map;
 
+/**
+ * The gathering state of a {@link PeerConnection}.
+ */
 public enum GatheringState {
     RTC_GATHERING_INPROGRESS(1),
     RTC_GATHERING_COMPLETE(2),
@@ -14,7 +19,7 @@ public enum GatheringState {
         this.state = state;
     }
 
-    public static GatheringState of(final int state) {
+    static GatheringState of(final int state) {
         return MAP.get(state);
     }
 }

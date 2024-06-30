@@ -2,14 +2,16 @@ package tel.schich.libdatachannel;
 
 import static generated.DatachannelLibrary.INSTANCE;
 
+import tel.schich.libdatachannel.util.JNAUtil;
+
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 
-public class RTCPeerConnection implements AutoCloseable {
+public class PeerConnection implements AutoCloseable {
 
     private Integer peer;
-    private Map<Integer, RTCDataChannel> channels = new HashMap<>();
+    private Map<Integer, DataChannel> channels = new HashMap<>();
 
     /**
      * Creates a Peer Connection.
@@ -19,8 +21,8 @@ public class RTCPeerConnection implements AutoCloseable {
      * @param config the peer configuration
      * @return the peer connection
      */
-    public static RTCPeerConnection createPeer(RTCConfiguration config) {
-        final var peer = new RTCPeerConnection();
+    public static PeerConnection createPeer(PeerConnectionConfiguratino config) {
+        final var peer = new PeerConnection();
         final var code = INSTANCE.rtcCreatePeerConnection(config.innerCfg);
         peer.peer = code;
         if (code < 0) {
@@ -74,18 +76,18 @@ public class RTCPeerConnection implements AutoCloseable {
      * Closes all Data Channels.
      */
     public void closeChannels() {
-        for (final RTCDataChannel value : channels.values()) {
+        for (final DataChannel value : channels.values()) {
             value.close();
         }
     }
 
-    public void onLocalDescription(PeerCallbacks.LocalDescription cb) {
+    public void onLocalDescription(PeerConnectionCallback.LocalDescription cb) {
         INSTANCE.rtcSetLocalDescriptionCallback(this.peer, (pc, sdp, type, ptr) -> {
             cb.handleDescription(this, sdp.getString(0), type.getString(0));
         });
     }
 
-    public void onLocalCandidate(PeerCallbacks.LocalCandidate cb) {
+    public void onLocalCandidate(PeerConnectionCallback.LocalCandidate cb) {
         INSTANCE.rtcSetLocalCandidateCallback(this.peer, (pc, cand, mid, ptr) -> {
             cb.handleCandidate(this, cand.getString(0), mid.getString(0));
         });
@@ -157,13 +159,19 @@ public class RTCPeerConnection implements AutoCloseable {
         return JNAUtil.readStringWithBuffer((buff, size) -> INSTANCE.rtcGetRemoteDescriptionType(this.peer, buff, size));
     }
 
+    /**
+     * Adds a trickled remote candidate received from the remote peer by the user's method of choice.
+     * The Peer Connection must have a remote description set.
+     *
+     * @param candidate a null-terminated SDP string representing the candidate (with or without the "a=" prefix)
+     */
     public void addRemoteCandidate(String candidate) {
         var code = INSTANCE.rtcAddRemoteCandidate(this.peer, candidate, null);
     }
 
     /**
-     * Adds a trickled remote candidate received from the remote peer by the user's method of choice. The Peer Connection must have a remote
-     * description set.
+     * Adds a trickled remote candidate received from the remote peer by the user's method of choice.
+     * The Peer Connection must have a remote description set.
      *
      * @param candidate a null-terminated SDP string representing the candidate (with or without the "a=" prefix)
      * @param mid       (optional): a null-terminated string representing the mid of the candidate in the remote SDP description or NULL for
@@ -224,7 +232,7 @@ public class RTCPeerConnection implements AutoCloseable {
         return INSTANCE.rtcGetRemoteMaxMessageSize(this.peer);
     }
 
-    public void onStateChange(PeerCallbacks.StateChange cb) {
+    public void onStateChange(PeerConnectionCallback.StateChange cb) {
         if (cb == null) {
             var code = INSTANCE.rtcSetStateChangeCallback(this.peer, null);
             return;
@@ -234,19 +242,19 @@ public class RTCPeerConnection implements AutoCloseable {
         });
     }
 
-    public void onGatheringStateChange(PeerCallbacks.GatheringStateChange cb) {
+    public void onGatheringStateChange(PeerConnectionCallback.GatheringStateChange cb) {
         INSTANCE.rtcSetGatheringStateChangeCallback(this.peer, (pc, state, ptr) -> {
             cb.handleGatherChange(this, GatheringState.of(state));
         });
     }
 
-    public void onDataChannel(PeerCallbacks.DataChannel cb) {
+    public void onDataChannel(PeerConnectionCallback.DataChannel cb) {
         final var code = INSTANCE.rtcSetDataChannelCallback(this.peer, (pc, dc, ptr) -> {
             cb.handleDC(this, channels.get(dc));
         });
     }
 
-    public void onTrack(PeerCallbacks.Track cb) {
+    public void onTrack(PeerConnectionCallback.Track cb) {
         INSTANCE.rtcSetTrackCallback(this.peer, (pc, tr, ptr) -> {
             cb.handleTrack(this, tr);
         });
@@ -268,12 +276,12 @@ public class RTCPeerConnection implements AutoCloseable {
      * @param label a user-defined UTF-8 string representing the Data Channel name
      * @return the created data channel
      */
-    public RTCDataChannel createDataChannel(String label) {
+    public DataChannel createDataChannel(String label) {
         final var dc = INSTANCE.rtcCreateDataChannel(this.peer, label);
         if (dc < 0) {
             throw new IllegalStateException("Error: " + dc);
         }
-        final var channel = new RTCDataChannel(this, dc);
+        final var channel = new DataChannel(this, dc);
         this.channels.put(dc, channel);
         return channel;
     }
@@ -286,13 +294,13 @@ public class RTCPeerConnection implements AutoCloseable {
      * @param init  a structure of initialization settings
      * @return the created data channel
      */
-    public RTCDataChannel createDataChannelEx(String label, DataChannelInitSettings init) {
+    public DataChannel createDataChannelEx(String label, DataChannelInitSettings init) {
 
         final var dc = INSTANCE.rtcCreateDataChannelEx(this.peer, label, init.innerInit);
         if (dc < 0) {
             throw new IllegalStateException("Error: " + dc);
         }
-        final var channel = new RTCDataChannel(this, dc);
+        final var channel = new DataChannel(this, dc);
         this.channels.put(dc, channel);
         return channel;
     }

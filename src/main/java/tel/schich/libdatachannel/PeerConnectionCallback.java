@@ -1,6 +1,6 @@
 package tel.schich.libdatachannel;
 
-public interface PeerCallbacks {
+public interface PeerConnectionCallback {
 
     /**
      * Called when the local description has been set.
@@ -8,7 +8,7 @@ public interface PeerCallbacks {
     @FunctionalInterface
     interface LocalDescription {
 
-        void handleDescription(RTCPeerConnection peer, String sdp, String type);
+        void handleDescription(PeerConnection peer, String sdp, String type);
     }
 
     /**
@@ -17,7 +17,7 @@ public interface PeerCallbacks {
     @FunctionalInterface
     interface LocalCandidate {
 
-        void handleCandidate(RTCPeerConnection peer, String candidate, String mediaId);
+        void handleCandidate(PeerConnection peer, String candidate, String mediaId);
     }
 
     /**
@@ -26,7 +26,7 @@ public interface PeerCallbacks {
     @FunctionalInterface
     interface StateChange {
 
-        void handleChange(RTCPeerConnection peer, PeerState state);
+        void handleChange(PeerConnection peer, PeerState state);
     }
 
     /**
@@ -35,7 +35,7 @@ public interface PeerCallbacks {
     @FunctionalInterface
     interface GatheringStateChange {
 
-        void handleGatherChange(RTCPeerConnection peer, GatheringState state);
+        void handleGatherChange(PeerConnection peer, GatheringState state);
     }
 
     /**
@@ -45,7 +45,7 @@ public interface PeerCallbacks {
     @FunctionalInterface
     interface DataChannel {
 
-        void handleDC(RTCPeerConnection peer, RTCDataChannel channel);
+        void handleDC(PeerConnection peer, tel.schich.libdatachannel.DataChannel channel);
     }
 
     /**
@@ -54,6 +54,6 @@ public interface PeerCallbacks {
     @FunctionalInterface
     interface Track {
 
-        void handleTrack(RTCPeerConnection peer, int track); // TODO track object?
+        void handleTrack(PeerConnection peer, int track); // TODO track object?
     }
 }

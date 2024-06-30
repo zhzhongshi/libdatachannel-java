@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import tel.schich.libdatachannel.util.Util;
+
 import java.util.Map;
 
 public enum PeerState {
@@ -18,7 +20,7 @@ public enum PeerState {
         this.state = state;
     }
 
-    public static PeerState of(final int state) {
+    static PeerState of(final int state) {
         return MAP.get(state);
     }
 }
