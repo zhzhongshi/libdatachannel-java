@@ -1,3 +1,3 @@
-[submodule "libdatachannel"]
-	path = libdatachannel
+[submodule "jni/libdatachannel"]
+	path = jni/libdatachannel
 	url = https://github.com/paullouisageneau/libdatachannel.git
