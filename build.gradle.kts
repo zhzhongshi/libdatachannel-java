@@ -27,7 +27,7 @@ dependencies {
     }
 }
 
-val jniGluePath = project.layout.buildDirectory.get().dir("jni/${project.name}")
+val jniGluePath = project.layout.projectDirectory.dir("jni/generated")
 tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.addAll(listOf("-Agenerate.jni.headers=true"))
     options.headerOutputDirectory = jniGluePath

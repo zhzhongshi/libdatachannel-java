@@ -14,8 +14,8 @@ include_directories(
         libdatachannel/include
         "$ENV{JAVA_HOME}/include"
         "$ENV{JAVA_HOME}/include/linux"
-        build/jni)
+        generated/jni)
 
-add_library(libdatachannel_test SHARED
-        build/jni/libdatachannel-java/jni-c-to-java.c)
-target_link_libraries(libdatachannel_test PRIVATE datachannel-static)
+add_library(libdatachannel_java SHARED
+        generated/jni-c-to-java.c)
+target_link_libraries(libdatachannel_java PRIVATE datachannel-static)
