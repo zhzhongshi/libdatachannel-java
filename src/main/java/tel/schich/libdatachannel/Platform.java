@@ -33,6 +33,8 @@ class Platform {
     public static OS getOS() {
         if (isLinux()) {
             return OS.LINUX;
+        } else if (isWindows()) {
+            return OS.WINDOWS;
         } else {
             return OS.UNKNOWN;
         }
