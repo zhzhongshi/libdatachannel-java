@@ -2,15 +2,15 @@ package tel.schich.libdatachannel;
 
 import tel.schich.jniaccess.JNIAccess;
 
-public class NativeOperationException {
-    private int errno;
+public class NativeOperationException extends RuntimeException {
+    private final int code;
 
     @JNIAccess
-    public NativeOperationException(int errno) {
-        this.errno = errno;
+    public NativeOperationException(int code) {
+        this.code = code;
     }
 
-    public int getErrno() {
-        return errno;
+    public int getCode() {
+        return code;
     }
 }

@@ -4,14 +4,35 @@ import static generated.DatachannelLibrary.INSTANCE;
 
 import tel.schich.libdatachannel.util.JNAUtil;
 
+import java.io.ByteArrayOutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 public class PeerConnection implements AutoCloseable {
-
-    private Integer peer;
+    private final int peerHandle;
     private Map<Integer, DataChannel> channels = new HashMap<>();
+
+    private PeerConnection(int peerHandle) {
+        this.peerHandle = peerHandle;
+    }
+
+    private static byte[] iceUrisToCStrings(Collection<URI> uris) {
+        if (uris == null || uris.isEmpty()) {
+            return null;
+        }
+        ByteArrayOutputStream iceServers = new ByteArrayOutputStream();
+        for (URI server : uris) {
+            iceServers.writeBytes(server.toASCIIString().getBytes(StandardCharsets.US_ASCII));
+            iceServers.write(0);
+        }
+        return iceServers.toByteArray();
+    }
 
     /**
      * Creates a Peer Connection.
@@ -22,27 +43,24 @@ public class PeerConnection implements AutoCloseable {
      * @return the peer connection
      */
     public static PeerConnection createPeer(PeerConnectionConfiguration config) {
-        final var peer = new PeerConnection();
-        final var code = INSTANCE.rtcCreatePeerConnection(config.innerCfg);
-        peer.peer = code;
-        if (code < 0) {
-            throw new IllegalStateException("Error Code: " + code); // TODO what are error codes
+        int result = LibDataChannelNative.rtcCreatePeerConnection(
+                iceUrisToCStrings(config.iceServers),
+                config.proxyServer.toASCIIString(),
+                config.bindAddress.toString(),
+                config.certificateType.state,
+                config.iceTransportPolicy.state,
+                config.enableIceTcp,
+                config.enableIceUdpMux,
+                config.disableAutoNegotiation,
+                config.forceMediaTransport,
+                config.portRangeBegin,
+                config.portRangeEnd,
+                config.mtu,
+                config.maxMessageSize);
+        if (result < 0) {
+            throw new IllegalStateException("Error Code: " + result); // TODO what are error codes
         }
-        return peer;
-    }
-
-    public static void initLogger(LogLevel level) {
-        // TODO slf4j?
-        INSTANCE.rtcInitLogger(level.level, (lvl, msg) -> System.out.println(lvl + ": " + msg));
-    }
-
-    public static void preload() {
-        INSTANCE.rtcPreload();
-    }
-
-    public static void cleanup() {
-        // TODO must never call from callback
-        INSTANCE.rtcCleanup();
+        return new PeerConnection(result);
     }
 
     /**
@@ -52,24 +70,17 @@ public class PeerConnection implements AutoCloseable {
      */
     @Override
     public void close() {
-        if (this.peer == null) {
-            return;
-        }
         // TODO close channels explicitly?
 
         // Blocks until all callbacks have returned (except a callback calling this)
-        final var closed = INSTANCE.rtcClosePeerConnection(this.peer);
-        if (closed < 0) {
-            throw new IllegalStateException("Error closing peer connection: " + this.peer + " err: " + closed);
+        int result = LibDataChannelNative.rtcClosePeerConnection(this.peerHandle);
+        if (result < 0) {
+            throw new IllegalStateException("Error closing peer connection: " + this.peerHandle + " err: " + result);
         }
-        if (this.peer == null) {
-            return;
+        result = LibDataChannelNative.rtcDeletePeerConnection(this.peerHandle);
+        if (result < 0) {
+            throw new IllegalStateException("Error deleting peer connection: " + this.peerHandle + " err: " + result);
         }
-        final var deleted = INSTANCE.rtcDeletePeerConnection(this.peer);
-        if (deleted < 0) {
-            throw new IllegalStateException("Error deleting peer connection: " + this.peer + " err: " + deleted);
-        }
-        this.peer = null;
     }
 
     /**
@@ -82,13 +93,13 @@ public class PeerConnection implements AutoCloseable {
     }
 
     public void onLocalDescription(PeerConnectionCallback.LocalDescription cb) {
-        INSTANCE.rtcSetLocalDescriptionCallback(this.peer, (pc, sdp, type, ptr) -> {
+        INSTANCE.rtcSetLocalDescriptionCallback(this.peerHandle, (pc, sdp, type, ptr) -> {
             cb.handleDescription(this, sdp.getString(0), type.getString(0));
         });
     }
 
     public void onLocalCandidate(PeerConnectionCallback.LocalCandidate cb) {
-        INSTANCE.rtcSetLocalCandidateCallback(this.peer, (pc, cand, mid, ptr) -> {
+        INSTANCE.rtcSetLocalCandidateCallback(this.peerHandle, (pc, cand, mid, ptr) -> {
             cb.handleCandidate(this, cand.getString(0), mid.getString(0));
         });
     }
@@ -106,7 +117,10 @@ public class PeerConnection implements AutoCloseable {
      * @param type (optional): type of the description ("offer", "answer", "pranswer", or "rollback") or NULL for autodetection.
      */
     public void setLocalDescription(String type) {
-        final var code = INSTANCE.rtcSetLocalDescription(this.peer, type);
+        int result = LibDataChannelNative.rtcSetLocalDescription(peerHandle, type);
+        if (result < 0) {
+            throw new NativeOperationException(result);
+        }
     }
 
     /**
@@ -115,7 +129,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the current local description
      */
     public String localDescription() {
-        return JNAUtil.readStringWithBuffer((buff, size) -> INSTANCE.rtcGetLocalDescription(this.peer, buff, size));
+        return LibDataChannelNative.rtcGetLocalDescription(peerHandle);
     }
 
     /**
@@ -124,7 +138,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the current local description type
      */
     public String localDescriptionType() {
-        return JNAUtil.readStringWithBuffer((buff, size) -> INSTANCE.rtcGetLocalDescriptionType(this.peer, buff, size));
+        return LibDataChannelNative.rtcGetLocalDescriptionType(peerHandle);
     }
 
     /**
@@ -137,7 +151,10 @@ public class PeerConnection implements AutoCloseable {
      * @param type (optional): type of the description ("offer", "answer", "pranswer", or "rollback") or NULL for autodetection.
      */
     public void setRemoteDescription(String sdp, String type) {
-        final var code = INSTANCE.rtcSetRemoteDescription(this.peer, sdp, type);
+        final int result = LibDataChannelNative.rtcSetRemoteDescription(peerHandle, sdp, type);
+        if (result < 0) {
+            throw new NativeOperationException(result);
+        }
     }
 
     /**
@@ -146,7 +163,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the current remote description
      */
     public String remoteDescription() {
-        return JNAUtil.readStringWithBuffer((buff, size) -> INSTANCE.rtcGetRemoteDescription(this.peer, buff, size));
+        return LibDataChannelNative.rtcGetRemoteDescription(peerHandle);
     }
 
 
@@ -156,7 +173,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the current remote description type
      */
     public String remoteDescriptionType() {
-        return JNAUtil.readStringWithBuffer((buff, size) -> INSTANCE.rtcGetRemoteDescriptionType(this.peer, buff, size));
+        return LibDataChannelNative.rtcGetRemoteDescriptionType(this.peerHandle);
     }
 
     /**
@@ -166,7 +183,7 @@ public class PeerConnection implements AutoCloseable {
      * @param candidate a null-terminated SDP string representing the candidate (with or without the "a=" prefix)
      */
     public void addRemoteCandidate(String candidate) {
-        var code = INSTANCE.rtcAddRemoteCandidate(this.peer, candidate, null);
+        var code = INSTANCE.rtcAddRemoteCandidate(this.peerHandle, candidate, null);
     }
 
     /**
@@ -178,7 +195,14 @@ public class PeerConnection implements AutoCloseable {
      *                  autodetection
      */
     public void addRemoteCandidate(String candidate, String mid) {
-        var code = INSTANCE.rtcAddRemoteCandidate(this.peer, candidate, mid);
+        var code = INSTANCE.rtcAddRemoteCandidate(this.peerHandle, candidate, mid);
+    }
+
+    private static InetSocketAddress parseAddress(String rawAddress) {
+        int colonIndex = rawAddress.lastIndexOf(':');
+        String ip = rawAddress.substring(0, colonIndex);
+        int port = Integer.parseInt(rawAddress.substring(colonIndex + 1));
+        return InetSocketAddress.createUnresolved(ip, port);
     }
 
     /**
@@ -188,9 +212,8 @@ public class PeerConnection implements AutoCloseable {
      *
      * @return the local address
      */
-    public URI localAddress() {
-        final var localAddress = JNAUtil.readStringWithBuffer((buff, size) -> INSTANCE.rtcGetRemoteDescription(this.peer, buff, size));
-        return URI.create(localAddress);
+    public InetSocketAddress localAddress() {
+        return parseAddress(LibDataChannelNative.rtcGetLocalAddress(this.peerHandle));
     }
 
     /**
@@ -200,9 +223,8 @@ public class PeerConnection implements AutoCloseable {
      *
      * @return the remote address
      */
-    public URI remoteAddress() {
-        final var localAddress = JNAUtil.readStringWithBuffer((buff, size) -> INSTANCE.rtcGetRemoteAddress(this.peer, buff, size));
-        return URI.create("udp://" +localAddress);
+    public InetSocketAddress remoteAddress() {
+        return parseAddress(LibDataChannelNative.rtcGetRemoteAddress(this.peerHandle));
     }
 
     /**
@@ -220,7 +242,7 @@ public class PeerConnection implements AutoCloseable {
      * @return maximum stream ID
      */
     public int maxDataChannelStream() {
-        return INSTANCE.rtcGetMaxDataChannelStream(this.peer);
+        return INSTANCE.rtcGetMaxDataChannelStream(this.peerHandle);
     }
 
     /**
@@ -229,33 +251,33 @@ public class PeerConnection implements AutoCloseable {
      * @return the maximum message size
      */
     public int remoteMaxMessageSize() {
-        return INSTANCE.rtcGetRemoteMaxMessageSize(this.peer);
+        return INSTANCE.rtcGetRemoteMaxMessageSize(this.peerHandle);
     }
 
     public void onStateChange(PeerConnectionCallback.StateChange cb) {
         if (cb == null) {
-            var code = INSTANCE.rtcSetStateChangeCallback(this.peer, null);
+            var code = INSTANCE.rtcSetStateChangeCallback(this.peerHandle, null);
             return;
         }
-        var code = INSTANCE.rtcSetStateChangeCallback(this.peer, (pc, state, ptr) -> {
+        var code = INSTANCE.rtcSetStateChangeCallback(this.peerHandle, (pc, state, ptr) -> {
             cb.handleChange(this, PeerState.of(state));
         });
     }
 
     public void onGatheringStateChange(PeerConnectionCallback.GatheringStateChange cb) {
-        INSTANCE.rtcSetGatheringStateChangeCallback(this.peer, (pc, state, ptr) -> {
+        INSTANCE.rtcSetGatheringStateChangeCallback(this.peerHandle, (pc, state, ptr) -> {
             cb.handleGatherChange(this, GatheringState.of(state));
         });
     }
 
     public void onDataChannel(PeerConnectionCallback.DataChannel cb) {
-        final var code = INSTANCE.rtcSetDataChannelCallback(this.peer, (pc, dc, ptr) -> {
+        final var code = INSTANCE.rtcSetDataChannelCallback(this.peerHandle, (pc, dc, ptr) -> {
             cb.handleDC(this, channels.get(dc));
         });
     }
 
     public void onTrack(PeerConnectionCallback.Track cb) {
-        INSTANCE.rtcSetTrackCallback(this.peer, (pc, tr, ptr) -> {
+        INSTANCE.rtcSetTrackCallback(this.peerHandle, (pc, tr, ptr) -> {
             cb.handleTrack(this, tr);
         });
     }
@@ -277,7 +299,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the created data channel
      */
     public DataChannel createDataChannel(String label) {
-        final var dc = INSTANCE.rtcCreateDataChannel(this.peer, label);
+        final var dc = INSTANCE.rtcCreateDataChannel(this.peerHandle, label);
         if (dc < 0) {
             throw new IllegalStateException("Error: " + dc);
         }
@@ -296,7 +318,7 @@ public class PeerConnection implements AutoCloseable {
      */
     public DataChannel createDataChannelEx(String label, DataChannelInitSettings init) {
 
-        final var dc = INSTANCE.rtcCreateDataChannelEx(this.peer, label, init.innerInit);
+        final var dc = INSTANCE.rtcCreateDataChannelEx(this.peerHandle, label, init.innerInit);
         if (dc < 0) {
             throw new IllegalStateException("Error: " + dc);
         }
@@ -305,8 +327,8 @@ public class PeerConnection implements AutoCloseable {
         return channel;
     }
 
-    public boolean isClosed() {
-        return this.peer == null;
-    }
+//    public boolean isClosed() {
+//        return this.peerHandle == null;
+//    }
 
 }

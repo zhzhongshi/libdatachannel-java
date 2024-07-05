@@ -1,45 +1,74 @@
 package tel.schich.libdatachannel;
 
-import com.sun.jna.ptr.PointerByReference;
-import generated.rtcConfiguration;
-import tel.schich.libdatachannel.util.JNAUtil;
 import tel.schich.libdatachannel.util.Util;
 
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class PeerConnectionConfiguration {
+    public static final int AUTO_MTU = 0;
+    public static final PeerConnectionConfiguration DEFAULT = new PeerConnectionConfiguration(Collections.emptyList(),
+            null,
+            null,
+    CertificateType.RTC_CERTIFICATE_DEFAULT,
+    IceTransportPolicy.RTC_TRANSPORT_POLICY_ALL,
+            false,
+            false,
+            false,
+            false,
+            (short) 0,
+            (short) 0,
+    AUTO_MTU,
+            0);
 
-    rtcConfiguration innerCfg = new rtcConfiguration();
+    final List<URI> iceServers;
+    final URI proxyServer;
+    final InetAddress bindAddress;
+    final CertificateType certificateType;
+    final IceTransportPolicy iceTransportPolicy;
+    final boolean enableIceTcp;
+    final boolean enableIceUdpMux;
+    final boolean disableAutoNegotiation;
+    final boolean forceMediaTransport;
+    final short portRangeBegin;
+    final short portRangeEnd;
+    final int mtu;
+    final int maxMessageSize;
 
+    private PeerConnectionConfiguration(List<URI> iceServers, URI proxyServer, InetAddress bindAddress, CertificateType certificateType, IceTransportPolicy iceTransportPolicy, boolean enableIceTcp, boolean enableIceUdpMux, boolean disableAutoNegotiation, boolean forceMediaTransport, short portRangeBegin, short portRangeEnd, int mtu, int maxMessageSize) {
+        this.iceServers = iceServers;
+        this.proxyServer = proxyServer;
+        this.bindAddress = bindAddress;
+        this.certificateType = certificateType;
+        this.iceTransportPolicy = iceTransportPolicy;
+        this.enableIceTcp = enableIceTcp;
+        this.enableIceUdpMux = enableIceUdpMux;
+        this.disableAutoNegotiation = disableAutoNegotiation;
+        this.forceMediaTransport = forceMediaTransport;
+        this.portRangeBegin = portRangeBegin;
+        this.portRangeEnd = portRangeEnd;
+        this.mtu = mtu;
+        this.maxMessageSize = maxMessageSize;
+    }
 
     /**
      * (optional): an array of pointers on null-terminated ICE server URIs (NULL if unused)
      *
      * Each entry in iceServers must match the format [("stun"|"turn"|"turns") (":"|"://")][username ":" password "@"]hostname[":" port]["?transport=" ("udp"|"tcp"|"tls")]. The default scheme is STUN, the default port is 3478 (5349 over TLS), and the default transport is UDP. For instance, a STUN server URI could be mystunserver.org, and a TURN server URI could be turn:myuser:12345678@turnserver.org. Note transports TCP and TLS are only available for a TURN server with libnice as ICE backend and govern only the TURN control connection, meaning relaying is always performed over UDP.
      */
-    PeerConnectionConfiguration iceServers(String... iceServer) {
-        // TODO multiple servers is not working
-        this.innerCfg.iceServers = new PointerByReference(JNAUtil.toPointerArray(iceServer));
-        this.innerCfg.iceServersCount = iceServer.length;
-        return this;
+    public PeerConnectionConfiguration withIceServers(Collection<URI> iceServers) {
+        return new PeerConnectionConfiguration(new ArrayList<>(iceServers), proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
     }
 
-    List<String> iceServers() {
-        // TODO multiple servers is not working
-        final var serverList = this.innerCfg.iceServers.getValue().getString(0);
-        return Arrays.stream(serverList.split(String.valueOf((char) 0))).filter(s -> !s.isEmpty()).toList();
-    }
-
-    /**
-     * (optional): number of URLs in the array pointed by iceServers (0 if unused)
-     */
-    int iceServersCount() {
-        return this.innerCfg.iceServersCount;
+    public List<URI> iceServers() {
+        return this.iceServers;
     }
 
     /**
@@ -49,42 +78,148 @@ public class PeerConnectionConfiguration {
      *
      * If the username or password of an URI contains reserved special characters, they must be percent-encoded. In particular, ":" must be encoded as "%3A" and "@" must by encoded as "%40".
      */
-    PeerConnectionConfiguration proxyServer(URI proxy) {
-        this.innerCfg.proxyServer = JNAUtil.toPointer(proxy.toString());
-        return this;
+    public PeerConnectionConfiguration withProxyServer(URI proxy) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
     }
 
-    Optional<URI> proxyServer() {
-        try {
-            // TODO check if pointer to null?
-            if (this.innerCfg.proxyServer == null) {
-                return Optional.empty();
-            }
-            return Optional.of(new URI(this.innerCfg.proxyServer.getString(0)));
-        } catch (URISyntaxException e) {
-            return Optional.empty();
-
-        }
+    public Optional<URI> proxyServer() {
+        return Optional.of(proxyServer);
     }
 
     /**
      * (optional): if non-NULL, bind only to the given local address (ignored with libnice as ICE backend)
      */
-    PeerConnectionConfiguration bindAddress(URI bindAdress) {
-        this.innerCfg.bindAddress = JNAUtil.toPointer(bindAdress.toString());
-        return this;
+    public PeerConnectionConfiguration withBindAddress(InetAddress bindAddress) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
     }
 
-    Optional<URI> bindAddress() {
-        try {
-            // TODO check if pointer to null?
-            if (this.innerCfg.proxyServer == null) {
-                return Optional.empty();
-            }
-            return Optional.of(new URI(this.innerCfg.proxyServer.getString(0)));
-        } catch (URISyntaxException e) {
-            return Optional.empty();
+    public Optional<InetAddress> bindAddress() {
+        return Optional.of(bindAddress);
+    }
 
+    /**
+     * (optional): certificate type, either RTC_CERTIFICATE_ECDSA or RTC_CERTIFICATE_RSA (0 or RTC_CERTIFICATE_DEFAULT if default)
+     */
+    public PeerConnectionConfiguration withCertificateType(CertificateType certificateType) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
+    }
+
+    public CertificateType certificateType() {
+        return certificateType;
+    }
+
+    /**
+     * (optional): ICE transport policy, if set to RTC_TRANSPORT_POLICY_RELAY, the PeerConnection will emit only relayed candidates (0 or
+     * RTC_TRANSPORT_POLICY_ALL if default)
+     */
+    public PeerConnectionConfiguration iceTransportPolicy(IceTransportPolicy policy) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
+    }
+
+    public IceTransportPolicy iceTransportPolicy() {
+        return iceTransportPolicy;
+    }
+
+    /**
+     * if true, generate TCP candidates for ICE (ignored with libjuice as ICE backend)
+     */
+    public PeerConnectionConfiguration withEnableIceTcp(boolean enableIceTcp) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
+    }
+
+    public boolean enableIceTcp() {
+        return this.enableIceTcp;
+    }
+
+    /**
+     * if true, connections are multiplexed on the same UDP port (should be combined with portRangeBegin and portRangeEnd, ignored with libnice as ICE
+     * backend)
+     */
+    public PeerConnectionConfiguration withEnableIceUdpMux(boolean enableIceUdpMux) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
+    }
+
+    public boolean enableIceUdpMux() {
+        return enableIceUdpMux;
+    }
+
+    /**
+     * if true, the user is responsible for calling rtcSetLocalDescription after creating a Data Channel and after setting the remote description
+     */
+    public PeerConnectionConfiguration withDisableAutoNegotiation(boolean disableAutoNegotiation) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
+    }
+
+    public boolean disableAutoNegotiation() {
+        return disableAutoNegotiation;
+    }
+
+    /**
+     * if true, the connection allocates the SRTP media transport even if no tracks are present (necessary to add tracks during later renegotiation)
+     */
+    public PeerConnectionConfiguration withForceMediaTransport(boolean forceMediaTransport) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
+    }
+
+    public boolean forceMediaTransport() {
+        return forceMediaTransport;
+    }
+
+
+    /**
+     * (optional): first port (included) of the allowed local port range (0 if unused)
+     */
+    public PeerConnectionConfiguration withPortRangeBegin(short portRangeBegin) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
+    }
+
+    public short portRangeBegin() {
+        return portRangeBegin;
+    }
+
+
+    /**
+     * (optional): last port (included) of the allowed local port (0 if unused)
+     */
+    public PeerConnectionConfiguration withPortRangeEnd(short portRangeEnd) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
+    }
+
+    public short portRangeEnd() {
+        return portRangeEnd;
+    }
+
+    /**
+     * (optional): manually set the Maximum Transfer Unit (MTU) for the connection (0 if automatic)
+     */
+    public PeerConnectionConfiguration withMtu(int mtu) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
+    }
+
+    public int mtu() {
+        return mtu;
+    }
+
+    /**
+     * (optional): manually set the local maximum message size for Data Channels (0 if default)
+     */
+    public PeerConnectionConfiguration withMaxMessageSize(int maxMessageSize) {
+        return new PeerConnectionConfiguration(iceServers, proxyServer, bindAddress, certificateType, iceTransportPolicy, enableIceTcp, enableIceUdpMux, disableAutoNegotiation, forceMediaTransport, portRangeBegin, portRangeEnd, mtu, maxMessageSize);
+    }
+
+    public int maxMessageSize() {
+        return maxMessageSize;
+    }
+
+    public static Collection<URI> uris(String... uris) {
+        try {
+            List<URI> out = new ArrayList<>(uris.length);
+            for (String uri : uris) {
+                out.add(new URI(uri));
+            }
+            return out;
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -94,7 +229,7 @@ public class PeerConnectionConfiguration {
         RTC_CERTIFICATE_RSA(2);
 
         private static final Map<Integer, CertificateType> MAP = Util.mappedEnum(CertificateType.values(), s -> s.state);
-        private final int state;
+        final int state;
 
         CertificateType(int state) {
             this.state = state;
@@ -103,19 +238,6 @@ public class PeerConnectionConfiguration {
         public static CertificateType of(final int state) {
             return MAP.get(state);
         }
-
-    }
-
-    /**
-     * (optional): certificate type, either RTC_CERTIFICATE_ECDSA or RTC_CERTIFICATE_RSA (0 or RTC_CERTIFICATE_DEFAULT if default)
-     */
-    PeerConnectionConfiguration certificateType(CertificateType certificateType) {
-        this.innerCfg.certificateType = certificateType.state;
-        return this;
-    }
-
-    CertificateType certificateType() {
-        return CertificateType.of(this.innerCfg.certificateType);
     }
 
     public enum IceTransportPolicy {
@@ -123,7 +245,7 @@ public class PeerConnectionConfiguration {
         RTC_TRANSPORT_POLICY_RELAY(1),
         ;
         private static final Map<Integer, IceTransportPolicy> MAP = Util.mappedEnum(IceTransportPolicy.values(), s -> s.state);
-        private final int state;
+        final int state;
 
         IceTransportPolicy(int state) {
             this.state = state;
@@ -133,132 +255,5 @@ public class PeerConnectionConfiguration {
             return MAP.get(state);
         }
 
-    }
-
-    /**
-     * (optional): ICE transport policy, if set to RTC_TRANSPORT_POLICY_RELAY, the PeerConnection will emit only relayed candidates (0 or
-     * RTC_TRANSPORT_POLICY_ALL if default)
-     */
-    PeerConnectionConfiguration iceTransportPolicy(IceTransportPolicy policy) {
-        this.innerCfg.iceTransportPolicy = policy.state;
-        return this;
-    }
-
-    IceTransportPolicy iceTransportPolicy() {
-        return IceTransportPolicy.of(this.innerCfg.iceTransportPolicy);
-    }
-
-    /**
-     * if true, generate TCP candidates for ICE (ignored with libjuice as ICE backend)
-     */
-    PeerConnectionConfiguration enableIceTcp(boolean enableIceTcp) {
-        this.innerCfg.enableIceTcp = (byte) (enableIceTcp ? 1 : 0);
-        return this;
-    }
-
-    boolean enableIceTcp() {
-        return this.innerCfg.enableIceTcp == 1;
-    }
-
-    /**
-     * if true, connections are multiplexed on the same UDP port (should be combined with portRangeBegin and portRangeEnd, ignored with libnice as ICE
-     * backend)
-     */
-    PeerConnectionConfiguration enableIceUdpMux(boolean enableIceUdpMux) {
-        this.innerCfg.enableIceUdpMux = (byte) (enableIceUdpMux ? 1 : 0);
-        return this;
-    }
-
-    boolean enableIceUdpMux() {
-        return this.innerCfg.enableIceUdpMux == 1;
-    }
-
-    /**
-     * if true, the user is responsible for calling rtcSetLocalDescription after creating a Data Channel and after setting the remote description
-     */
-    PeerConnectionConfiguration disableAutoNegotiation(boolean disableAutoNegotiation) {
-        this.innerCfg.enableIceUdpMux = (byte) (disableAutoNegotiation ? 1 : 0);
-        return this;
-    }
-
-    boolean disableAutoNegotiation() {
-        return this.innerCfg.disableAutoNegotiation == 1;
-    }
-
-    /**
-     * if true, the connection allocates the SRTP media transport even if no tracks are present (necessary to add tracks during later renegotiation)
-     */
-    PeerConnectionConfiguration forceMediaTransport(boolean forceMediaTransport) {
-        this.innerCfg.forceMediaTransport = (byte) (forceMediaTransport ? 1 : 0);
-        return this;
-    }
-
-    boolean forceMediaTransport() {
-        return this.innerCfg.forceMediaTransport == 1;
-    }
-
-
-    /**
-     * (optional): first port (included) of the allowed local port range (0 if unused)
-     */
-    PeerConnectionConfiguration portRangeBegin(short portRangeBegin) {
-        this.innerCfg.portRangeBegin = portRangeBegin;
-        return this;
-    }
-
-    short portRangeBegin() {
-        return this.innerCfg.portRangeBegin;
-    }
-
-
-    /**
-     * (optional): last port (included) of the allowed local port (0 if unused)
-     */
-    PeerConnectionConfiguration portRangeEnd(short portRangeEnd) {
-        this.innerCfg.portRangeEnd = portRangeEnd;
-        return this;
-    }
-
-    short portRangeEnd() {
-        return this.innerCfg.portRangeEnd;
-    }
-
-    /**
-     * (optional): manually set the Maximum Transfer Unit (MTU) for the connection (0 if automatic)
-     */
-    PeerConnectionConfiguration mtu(int mtu) {
-        this.innerCfg.mtu = mtu;
-        return this;
-    }
-
-    PeerConnectionConfiguration autoMtu() {
-        this.innerCfg.mtu = 0;
-        return this;
-    }
-
-    int mtu() {
-        return this.innerCfg.mtu;
-    }
-
-    /**
-     * (optional): manually set the local maximum message size for Data Channels (0 if default)
-     */
-    PeerConnectionConfiguration maxMessageSize(int maxMessageSize) {
-        this.innerCfg.maxMessageSize = maxMessageSize;
-        return this;
-    }
-
-    int maxMessageSize() {
-        return this.innerCfg.maxMessageSize;
-    }
-
-
-    public static PeerConnectionConfiguration of(String iceServer) {
-        final var cfg = new PeerConnectionConfiguration();
-        cfg.innerCfg.iceServers = new PointerByReference(JNAUtil.toPointer(iceServer));
-        cfg.innerCfg.forceMediaTransport = 0;
-        cfg.innerCfg.iceServersCount = 1;
-        cfg.innerCfg.disableAutoNegotiation = 0;
-        return cfg;
     }
 }

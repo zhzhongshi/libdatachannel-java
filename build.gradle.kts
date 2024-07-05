@@ -14,6 +14,7 @@ java.toolchain {
 
 repositories {
     mavenCentral()
+    mavenLocal()
 }
 
 dependencies {
@@ -22,7 +23,7 @@ dependencies {
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 
-    "tel.schich:jni-access-generator:1.1.2".also {
+    "tel.schich:jni-access-generator:1.1.3-SNAPSHOT".also {
         annotationProcessor(it)
         compileOnly(it)
     }

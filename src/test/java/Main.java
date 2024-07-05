@@ -1,7 +1,7 @@
 import static tel.schich.libdatachannel.GatheringState.RTC_GATHERING_COMPLETE;
+import static tel.schich.libdatachannel.PeerConnectionConfiguration.uris;
 
 import tel.schich.libdatachannel.DataChannel;
-import tel.schich.libdatachannel.LogLevel;
 import tel.schich.libdatachannel.PeerConnection;
 import tel.schich.libdatachannel.PeerConnectionConfiguration;
 import tel.schich.libdatachannel.PeerState;
@@ -22,7 +22,7 @@ import java.util.stream.IntStream;
 public class Main {
 
     public static void main2(String[] args) {
-        final var cfg = PeerConnectionConfiguration.of("stun.l.google.com:19302");
+        final var cfg = PeerConnectionConfiguration.DEFAULT.withIceServers(uris("stun:stun.l.google.com:19302"));
         // try with resources to cleanup peer when done
         try (var peer = PeerConnection.createPeer(cfg)) {
             // when complete send sdp to remote peer
@@ -87,8 +87,7 @@ public class Main {
     static final String WEBSITE = "http://localhost:8080/libdatachannel-java/test.html";
 
     public static void main(String[] args) {
-        PeerConnection.initLogger(LogLevel.RTC_LOG_ERROR);
-        final var cfg = PeerConnectionConfiguration.of("stun.l.google.com:19302");
+        final var cfg = PeerConnectionConfiguration.DEFAULT.withIceServers(uris("stun.l.google.com:19302"));
         while (true) {
             try (var offer = Offer.create("test", cfg).join()) {
                 offer.channel.onOpen(Main::handleOpen);
@@ -122,7 +121,7 @@ public class Main {
         System.out.println(state);
         if (state == PeerState.RTC_CONNECTED) {
             final var uri = pc.remoteAddress();
-            System.out.println("Connected to " + uri.getHost() + ":" + uri.getPort());
+            System.out.println("Connected to " + uri.getAddress() + ":" + uri.getPort());
         }
     }
 
