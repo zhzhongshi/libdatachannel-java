@@ -1,6 +1,7 @@
 package tel.schich.libdatachannel;
 
 import static generated.DatachannelLibrary.INSTANCE;
+import static tel.schich.libdatachannel.util.Util.wrapError;
 
 import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
@@ -69,14 +70,8 @@ public class PeerConnection implements AutoCloseable {
         // TODO close channels explicitly?
 
         // Blocks until all callbacks have returned (except a callback calling this)
-        int result = LibDataChannelNative.rtcClosePeerConnection(this.peerHandle);
-        if (result < 0) {
-            throw new IllegalStateException("Error closing peer connection: " + this.peerHandle + " err: " + result);
-        }
-        result = LibDataChannelNative.rtcDeletePeerConnection(this.peerHandle);
-        if (result < 0) {
-            throw new IllegalStateException("Error deleting peer connection: " + this.peerHandle + " err: " + result);
-        }
+        wrapError(LibDataChannelNative.rtcClosePeerConnection(this.peerHandle));
+        wrapError(LibDataChannelNative.rtcDeletePeerConnection(this.peerHandle));
     }
 
     /**
@@ -107,16 +102,13 @@ public class PeerConnection implements AutoCloseable {
      * Following this call, the local description callback will be called with the local description, which must be sent to the remote peer by the
      * user's method of choice.
      * <p>
-     * Note this call is implicit after {@link #setRemoteDescription} and {@link #createDataChannel} or {@link #createDataChannelEx} if
+     * Note this call is implicit after {@link #setRemoteDescription} and {@link #createDataChannel} if
      * disableAutoNegotiation was not set on Peer Connection creation.
      *
      * @param type (optional): type of the description ("offer", "answer", "pranswer", or "rollback") or NULL for autodetection.
      */
     public void setLocalDescription(String type) {
-        int result = LibDataChannelNative.rtcSetLocalDescription(peerHandle, type);
-        if (result < 0) {
-            throw new NativeOperationException(result);
-        }
+        wrapError(LibDataChannelNative.rtcSetLocalDescription(peerHandle, type));
     }
 
     /**
@@ -147,10 +139,7 @@ public class PeerConnection implements AutoCloseable {
      * @param type (optional): type of the description ("offer", "answer", "pranswer", or "rollback") or NULL for autodetection.
      */
     public void setRemoteDescription(String sdp, String type) {
-        final int result = LibDataChannelNative.rtcSetRemoteDescription(peerHandle, sdp, type);
-        if (result < 0) {
-            throw new NativeOperationException(result);
-        }
+        wrapError(LibDataChannelNative.rtcSetRemoteDescription(peerHandle, sdp, type));
     }
 
     /**
@@ -295,13 +284,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the created data channel
      */
     public DataChannel createDataChannel(String label) {
-        final var dc = INSTANCE.rtcCreateDataChannel(this.peerHandle, label);
-        if (dc < 0) {
-            throw new IllegalStateException("Error: " + dc);
-        }
-        final var channel = new DataChannel(this, dc);
-        this.channels.put(dc, channel);
-        return channel;
+        return createDataChannel(label, DataChannelInitSettings.DEFAULT);
     }
 
     /**
@@ -312,19 +295,14 @@ public class PeerConnection implements AutoCloseable {
      * @param init  a structure of initialization settings
      * @return the created data channel
      */
-    public DataChannel createDataChannelEx(String label, DataChannelInitSettings init) {
+    public DataChannel createDataChannel(String label, DataChannelInitSettings init) {
 
-        final var dc = INSTANCE.rtcCreateDataChannelEx(this.peerHandle, label, init.innerInit);
-        if (dc < 0) {
-            throw new IllegalStateException("Error: " + dc);
-        }
-        final var channel = new DataChannel(this, dc);
-        this.channels.put(dc, channel);
+        final DataChannelReliability reliability = init.reliability();
+        int stream = init.stream().orElse(0);
+        boolean manualStream = init.stream().isPresent();
+        final int channelHandle = wrapError(LibDataChannelNative.rtcCreateDataChannelEx(this.peerHandle, label, reliability.isUnordered(), reliability.isUnreliable(), reliability.maxPacketLifeTime().toMillis(), reliability.maxRetransmits(), init.protocol(), init.isNegotiated(), stream, manualStream));
+        final DataChannel channel = new DataChannel(this, channelHandle);
+        this.channels.put(channelHandle, channel);
         return channel;
     }
-
-//    public boolean isClosed() {
-//        return this.peerHandle == null;
-//    }
-
 }

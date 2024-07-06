@@ -3,8 +3,8 @@ package tel.schich.libdatachannel;
 import static generated.DatachannelLibrary.INSTANCE;
 import static generated.DatachannelLibrary.RTC_ERR_NOT_AVAIL;
 import static generated.DatachannelLibrary.RTC_ERR_SUCCESS;
+import static tel.schich.libdatachannel.util.Util.wrapError;
 
-import generated.rtcReliability;
 import tel.schich.libdatachannel.util.JNAUtil;
 import tel.schich.libdatachannel.util.Util;
 
@@ -18,11 +18,11 @@ import java.util.Optional;
 public class DataChannel implements AutoCloseable {
 
     private final PeerConnection peer;
-    private Integer channel;
+    private final int channelHandle;
 
-    DataChannel(final PeerConnection peer, final int channel) {
+    DataChannel(final PeerConnection peer, final int channelHandle) {
         this.peer = peer;
-        this.channel = channel;
+        this.channelHandle = channelHandle;
     }
 
     /**
@@ -31,7 +31,7 @@ public class DataChannel implements AutoCloseable {
      * @return the peer connection
      */
     public PeerConnection peer() {
-        return this.peer;
+        return peer;
     }
 
     /**
@@ -40,7 +40,7 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onOpen(DataChannelCallback.Open cb) {
-        Util.registerCallback(INSTANCE::rtcSetOpenCallback, cb, (id, ptr) -> cb.onOpen(this), this.channel);
+        Util.registerCallback(INSTANCE::rtcSetOpenCallback, cb, (id, ptr) -> cb.onOpen(this), channelHandle);
     }
 
     /**
@@ -49,7 +49,7 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onClose(DataChannelCallback.Close cb) {
-        Util.registerCallback(INSTANCE::rtcSetClosedCallback, cb, (id, ptr) -> cb.onClose(this), this.channel);
+        Util.registerCallback(INSTANCE::rtcSetClosedCallback, cb, (id, ptr) -> cb.onClose(this), channelHandle);
     }
 
     /**
@@ -58,7 +58,7 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onError(DataChannelCallback.Error cb) {
-        Util.registerCallback(INSTANCE::rtcSetErrorCallback, cb, (id, error, ptr) -> cb.onError(this, error.getString(0)), this.channel);
+        Util.registerCallback(INSTANCE::rtcSetErrorCallback, cb, (id, error, ptr) -> cb.onError(this, error.getString(0)), channelHandle);
     }
 
     /**
@@ -70,7 +70,7 @@ public class DataChannel implements AutoCloseable {
         // TODO binary message?
         Util.registerCallback(INSTANCE::rtcSetMessageCallback, cb, (id, message, size, ptr) -> {
             cb.onMessage(this, size < 0 ? message.getString(0).getBytes() : message.getByteArray(0, size), size);
-        }, this.channel);
+        }, this.channelHandle);
     }
 
     /**
@@ -79,7 +79,7 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onBufferedAmountLow(DataChannelCallback.BufferedAmountLow cb) {
-        Util.registerCallback(INSTANCE::rtcSetBufferedAmountLowCallback, cb, (id, ptr) -> cb.onBufferedAmountLow(this), this.channel);
+        Util.registerCallback(INSTANCE::rtcSetBufferedAmountLowCallback, cb, (id, ptr) -> cb.onBufferedAmountLow(this), this.channelHandle);
     }
 
     /**
@@ -88,7 +88,7 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onAvailable(DataChannelCallback.Available cb) {
-        Util.registerCallback(INSTANCE::rtcSetAvailableCallback, cb, (id, ptr) -> cb.onAvailable(this), this.channel);
+        Util.registerCallback(INSTANCE::rtcSetAvailableCallback, cb, (id, ptr) -> cb.onAvailable(this), this.channelHandle);
     }
 
     /**
@@ -97,7 +97,7 @@ public class DataChannel implements AutoCloseable {
      * @param data the data
      */
     public void sendMessage(byte[] data) {
-        INSTANCE.rtcSendMessage(this.channel, JNAUtil.toPointer(data), data.length);
+        INSTANCE.rtcSendMessage(this.channelHandle, JNAUtil.toPointer(data), data.length);
     }
 
     /**
@@ -106,7 +106,7 @@ public class DataChannel implements AutoCloseable {
      * @param message the message
      */
     public void sendMessage(String message) {
-        INSTANCE.rtcSendMessage(this.channel, message, -1);
+        INSTANCE.rtcSendMessage(this.channelHandle, message, -1);
     }
 
     /**
@@ -118,9 +118,8 @@ public class DataChannel implements AutoCloseable {
      */
     @Override
     public void close() {
-        Util.wrapError(INSTANCE.rtcClose(this.channel));
-        Util.wrapError(INSTANCE.rtcDelete(this.channel));
-        this.channel = null;
+        wrapError(LibDataChannelNative.rtcClose(this.channelHandle));
+        wrapError(LibDataChannelNative.rtcDelete(this.channelHandle));
     }
 
     /**
@@ -129,7 +128,7 @@ public class DataChannel implements AutoCloseable {
      * @return true if closed
      */
     public boolean isClosed() {
-        return this.channel != null && INSTANCE.rtcIsClosed(this.channel) == 1;
+        return LibDataChannelNative.rtcIsClosed(this.channelHandle);
     }
 
     /**
@@ -138,7 +137,7 @@ public class DataChannel implements AutoCloseable {
      * @return true if open
      */
     public boolean isOpen() {
-        return this.channel != null && INSTANCE.rtcIsOpen(this.channel) == 1;
+        return LibDataChannelNative.rtcIsOpen(this.channelHandle);
     }
 
     /**
@@ -147,7 +146,7 @@ public class DataChannel implements AutoCloseable {
      * @return the maximum message size
      */
     public int maxMessageSize() {
-        return Util.wrapError(INSTANCE.rtcMaxMessageSize(this.channel));
+        return wrapError(INSTANCE.rtcMaxMessageSize(this.channelHandle));
     }
 
     /**
@@ -162,7 +161,7 @@ public class DataChannel implements AutoCloseable {
      * @param amount the amount
      */
     public void bufferedAmountLowThreshold(int amount) {
-        Util.wrapError(INSTANCE.rtcSetBufferedAmountLowThreshold(this.channel, amount));
+        wrapError(INSTANCE.rtcSetBufferedAmountLowThreshold(this.channelHandle, amount));
     }
 
     /**
@@ -177,13 +176,13 @@ public class DataChannel implements AutoCloseable {
         // TODO buffer variant?
         final var size = this.maxMessageSize();
         final var buffer = ByteBuffer.allocate(size);
-        final var code = INSTANCE.rtcReceiveMessage(this.channel, buffer, IntBuffer.wrap(new int[]{size}));
+        final var code = INSTANCE.rtcReceiveMessage(this.channelHandle, buffer, IntBuffer.wrap(new int[]{size}));
         if (code == RTC_ERR_SUCCESS) {
             return Optional.of(new String(buffer.array()));
         } else if (code == RTC_ERR_NOT_AVAIL) {
             return Optional.empty();
         }
-        Util.wrapError(code);
+        wrapError(code);
         throw new IllegalStateException("Error: " + code);
     }
 
@@ -196,7 +195,7 @@ public class DataChannel implements AutoCloseable {
      * @return the available amount
      */
     public int availableAmount() {
-        return Util.wrapError(INSTANCE.rtcGetAvailableAmount(this.channel));
+        return wrapError(LibDataChannelNative.rtcGetAvailableAmount(this.channelHandle));
     }
 
     /**
@@ -208,7 +207,7 @@ public class DataChannel implements AutoCloseable {
      * @return the buffered amount
      */
     public int bufferedAmount() {
-        return Util.wrapError(INSTANCE.rtcGetBufferedAmount(this.channel));
+        return wrapError(LibDataChannelNative.rtcGetBufferedAmount(this.channelHandle));
     }
 
     /**
@@ -217,7 +216,7 @@ public class DataChannel implements AutoCloseable {
      * @return the stream id
      */
     public int streamId() {
-        return Util.wrapError(INSTANCE.rtcGetDataChannelStream(this.channel));
+        return wrapError(LibDataChannelNative.rtcGetDataChannelStream(this.channelHandle));
     }
 
     /**
@@ -226,7 +225,7 @@ public class DataChannel implements AutoCloseable {
      * @return the label
      */
     public String label() {
-        return JNAUtil.readStringWithBuffer(((buff, size) -> INSTANCE.rtcGetDataChannelLabel(this.channel, buff, size)));
+        return LibDataChannelNative.rtcGetDataChannelLabel(channelHandle);
     }
 
     /**
@@ -235,7 +234,7 @@ public class DataChannel implements AutoCloseable {
      * @return the protocol
      */
     public String protocol() {
-        return JNAUtil.readStringWithBuffer(((buff, size) -> INSTANCE.rtcGetDataChannelProtocol(this.channel, buff, size)));
+        return LibDataChannelNative.rtcGetDataChannelProtocol(channelHandle);
     }
 
     /**
@@ -244,9 +243,7 @@ public class DataChannel implements AutoCloseable {
      * @return the reliability
      */
     public DataChannelReliability reliability() {
-        final var inner = new rtcReliability();
-        Util.wrapError(INSTANCE.rtcGetDataChannelReliability(this.channel, inner));
-        return new DataChannelReliability(inner);
+        return LibDataChannelNative.rtcGetDataChannelReliability(channelHandle);
     }
 
 
@@ -255,9 +252,9 @@ public class DataChannel implements AutoCloseable {
     @SuppressWarnings("deprecation")
     public Track addTrack(String sdp) {
         // TODO implement me
-        final var track = Util.wrapError(INSTANCE.rtcAddTrack(this.channel, sdp));
+        final int trackHandle = wrapError(INSTANCE.rtcAddTrack(this.channelHandle, sdp));
         // TODO final var track = Util.wrapError(INSTANCE.rtcAddTrackEx(this.channel, sdp));
-        return new Track(track, this);
+        return new Track(trackHandle, this);
     }
 
 

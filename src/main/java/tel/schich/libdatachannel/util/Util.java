@@ -6,6 +6,7 @@ import tel.schich.libdatachannel.exception.InvalidException;
 import tel.schich.libdatachannel.exception.LibDataChannelException;
 import tel.schich.libdatachannel.exception.NotAvailableException;
 import tel.schich.libdatachannel.exception.TooSmallException;
+import tel.schich.libdatachannel.exception.UnknownFailureException;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -19,15 +20,17 @@ public class Util {
         return Arrays.stream(values).collect(Collectors.toMap(mapper, s -> s));
     }
 
-    public static int wrapError(int code) throws LibDataChannelException{
-        return switch (code) {
+    public static int wrapError(int result) throws LibDataChannelException {
+        if (result > 0) {
+            return result;
+        }
+        return switch (result) {
             case DatachannelLibrary.RTC_ERR_SUCCESS -> 0;
-            case DatachannelLibrary.RTC_ERR_NOT_AVAIL -> throw new NotAvailableException();
-            case DatachannelLibrary.RTC_ERR_TOO_SMALL -> throw new TooSmallException();
             case DatachannelLibrary.RTC_ERR_INVALID -> throw new InvalidException();
             case DatachannelLibrary.RTC_ERR_FAILURE -> throw new FailureException();
-
-            default ->  code;
+            case DatachannelLibrary.RTC_ERR_NOT_AVAIL -> throw new NotAvailableException();
+            case DatachannelLibrary.RTC_ERR_TOO_SMALL -> throw new TooSmallException();
+            default -> throw new UnknownFailureException(result);
         };
     }
 

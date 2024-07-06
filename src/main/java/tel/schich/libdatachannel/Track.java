@@ -25,12 +25,12 @@ public class Track implements AutoCloseable {
     // After this function has been called, tr must not be used in a function call anymore. This function will block until all scheduled callbacks
     // of tr return (except the one this function might be called in) and no other callback will be called for tr after it returns.
     public String description() {
-        return JNAUtil.readStringWithBuffer(((buff, size) -> INSTANCE.rtcGetTrackDescription(this.track, buff, size)));
+        return LibDataChannelNative.rtcGetTrackDescription(this.track);
     }
 
     // Retrieves the mid (media indentifier) of a Track.
-    public String mid() {
-        return JNAUtil.readStringWithBuffer(((buff, size) -> INSTANCE.rtcGetTrackMid(this.track, buff, size)));
+    public String mediaId() {
+        return LibDataChannelNative.rtcGetTrackMid(this.track);
     }
 
     // Retrieves the direction of a Track.
