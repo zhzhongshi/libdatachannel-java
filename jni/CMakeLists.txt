@@ -1,18 +1,20 @@
-cmake_minimum_required(VERSION 3.28)
+cmake_minimum_required(VERSION 3.20)
 project(libdatachannel_jni C CXX)
 
-set(CMAKE_C_STANDARD 17)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 
 find_package(Java 11 REQUIRED)
+
+set(OPENSSL_USE_STATIC_LIBS FALSE CACHE BOOL "configure libdatachannel build")
 
 option(PROJECT_VERSION "The version of the project  " "unspecified")
 option(IS_RELEASE "Whether this is a release build" OFF)
 
-set(NO_WEBSOCKET ON)
-set(NO_MEDIA ON)
-set(NO_TESTS ON)
-set(NO_EXAMPLES ON)
+set(NO_WEBSOCKET ON CACHE BOOL "configure libdatachannel build")
+set(NO_MEDIA ON CACHE BOOL "configure libdatachannel build")
+set(NO_TESTS ON CACHE BOOL "configure libdatachannel build")
+set(NO_EXAMPLES ON CACHE BOOL "configure libdatachannel build")
 add_subdirectory(libdatachannel)
 
 include_directories(
@@ -30,9 +32,9 @@ endif()
 
 add_link_options(-z noexecstack -fvisibility=hidden)
 
-add_library(libdatachannel_java SHARED
+add_library(datachannel_java SHARED
         generated/jni-c-to-java.c
         src/native_callback.c
         src/init.c
         src/native.c)
-target_link_libraries(libdatachannel_java PRIVATE datachannel-static)
+target_link_libraries(datachannel_java PRIVATE datachannel-static)

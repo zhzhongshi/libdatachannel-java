@@ -2,13 +2,9 @@ package tel.schich.libdatachannel;
 
 import static generated.DatachannelLibrary.INSTANCE;
 
-import tel.schich.libdatachannel.util.JNAUtil;
-
 import java.io.ByteArrayOutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
