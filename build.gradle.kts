@@ -146,7 +146,7 @@ tasks.test {
 }
 
 dependencies {
-    "tel.schich:jni-access-generator:1.1.3-SNAPSHOT".also {
+    "tel.schich:jni-access-generator:1.1.3".also {
         annotationProcessor(it)
         compileOnly(it)
     }
