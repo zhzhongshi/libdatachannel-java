@@ -10,16 +10,6 @@ import java.util.function.BiFunction;
 
 public class JNAUtil {
 
-    public static Pointer toPointerArray(String... strings) {
-        final var pointers = Arrays.stream(strings).map(JNAUtil::toPointer).toArray(Pointer[]::new);
-
-        Memory pointerArray = new Memory((long) Native.POINTER_SIZE * pointers.length);
-        pointerArray.write(0, pointers, 0, pointers.length);
-
-        return pointerArray;
-    }
-
-
     public static Pointer toPointer(String string) {
         final byte[] bytes = Native.toByteArray(string);
         return toPointer(bytes);
