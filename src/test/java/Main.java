@@ -116,7 +116,7 @@ public class Main {
                 offer.channel.onError(Main::handleError);
                 offer.channel.peer().onStateChange(Main::handleStateChange);
                 final var encoded = Base64.getEncoder().encodeToString(offer.sdp.getBytes());
-                // System.out.println("SDP:\n\n" + sdp);
+                System.out.println("SDP:\n\n" + offer.sdp);
                 System.out.println("Awaiting Answer...\n" + WEBSITE + "?sdp=" + encoded);
 
                 String remoteSdp = Main.readCompressedSdp();
