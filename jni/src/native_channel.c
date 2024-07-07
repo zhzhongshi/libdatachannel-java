@@ -56,10 +56,14 @@ Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreateDataChannelEx(JNIEn
 JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcClose(JNIEnv *env, jclass clazz, jint channelHandle) {
     return rtcClose(channelHandle);
 }
-
 JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcDelete(JNIEnv *env, jclass clazz, jint channelHandle) {
     return rtcDelete(channelHandle);
 }
+
+JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcDeleteDataChannel(JNIEnv *env, jclass clazz, jint channelHandle) {
+    return rtcDeleteDataChannel(channelHandle);
+}
+
 
 JNIEXPORT jboolean JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcIsClosed(JNIEnv *env, jclass clazz, jint channelHandle) {
     return rtcIsClosed(channelHandle);

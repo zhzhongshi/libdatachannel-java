@@ -35,6 +35,7 @@ class LibDataChannelNative {
     static native int rtcCreateDataChannelEx(int peerHandle, String label, boolean unordered, boolean unreliable, long maxPacketLifeTime, int maxRetransmits, String protocol, boolean negotiated, int stream, boolean manualStream);
     static native int rtcClose(int channelHandle);
     static native int rtcDelete(int channelHandle);
+    static native int rtcDeleteDataChannel(int channelHandle);
     static native boolean rtcIsClosed(int channelHandle);
     static native boolean rtcIsOpen(int channelHandle);
     static native int rtcMaxMessageSize(int channelHandle);

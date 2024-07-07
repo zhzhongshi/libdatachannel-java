@@ -5,6 +5,7 @@
 #include <errno.h>
 #include "jni-c-to-java.h"
 #include "util.h"
+#include "callback.h"
 
 JNIEXPORT jint JNICALL
 Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreatePeerConnection(JNIEnv *env, jclass clazz,
@@ -61,6 +62,11 @@ Java_tel_schich_libdatachannel_LibDataChannelNative_rtcClosePeerConnection(JNIEn
 JNIEXPORT jint JNICALL
 Java_tel_schich_libdatachannel_LibDataChannelNative_rtcDeletePeerConnection(JNIEnv *env, jclass clazz,
                                                                             jint peerHandle) {
+    struct jvm_callback* callback = rtcGetUserPointer(peerHandle);
+    if (callback != NULL) {
+        free_callback(env, callback);
+    }
+
     return rtcDeletePeerConnection(peerHandle);
 }
 

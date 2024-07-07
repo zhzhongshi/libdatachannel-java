@@ -34,7 +34,6 @@ add_link_options(-z noexecstack -fvisibility=hidden)
 
 add_library(datachannel_java SHARED
         generated/jni-c-to-java.c
-        src/native_callback.c
         src/init.c
         src/util.c
         src/native_channel.c

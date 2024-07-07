@@ -159,7 +159,8 @@ public class DataChannel implements AutoCloseable {
     @Override
     public void close() {
         wrapError(LibDataChannelNative.rtcClose(channelHandle));
-        wrapError(LibDataChannelNative.rtcDelete(channelHandle));
+        wrapError(LibDataChannelNative.rtcDeleteDataChannel(channelHandle));
+        peer.dropChannelState(channelHandle);
     }
 
     /**

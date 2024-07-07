@@ -7,13 +7,15 @@ import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class PeerConnection implements AutoCloseable {
     private final int peerHandle;
-    private final ConcurrentMap<Integer, DataChannel> channels;
+    private final ConcurrentMap<Integer, DataChannelState> channels;
     private final ConcurrentMap<Integer, Track> tracks;
     final PeerConnectionListener listener;
 
@@ -66,12 +68,20 @@ public class PeerConnection implements AutoCloseable {
         return peer;
     }
 
-    DataChannel getChannel(int channelHandle) {
+    DataChannelState channelState(int channelHandle) {
         return channels.get(channelHandle);
     }
 
-    Track getTrack(int trackHandle) {
+    void dropChannelState(int channelHandle) {
+        channels.remove(channelHandle);
+    }
+
+    Track trackState(int trackHandle) {
         return tracks.get(trackHandle);
+    }
+
+    public void dropTrackState(int trackHandle) {
+        tracks.remove(trackHandle);
     }
 
     /**
@@ -81,9 +91,7 @@ public class PeerConnection implements AutoCloseable {
      */
     @Override
     public void close() {
-        // TODO close channels explicitly?
-
-        // Blocks until all callbacks have returned (except a callback calling this)
+        closeChannels();
         wrapError(LibDataChannelNative.rtcClosePeerConnection(peerHandle));
         wrapError(LibDataChannelNative.rtcDeletePeerConnection(peerHandle));
     }
@@ -92,8 +100,10 @@ public class PeerConnection implements AutoCloseable {
      * Closes all Data Channels.
      */
     public void closeChannels() {
-        for (final DataChannel value : channels.values()) {
-            value.close();
+        List<DataChannelState> channels = new ArrayList<>(this.channels.values());
+        this.channels.clear();
+        for (final DataChannelState value : channels) {
+            value.channel.close();
         }
     }
 
@@ -302,7 +312,7 @@ public class PeerConnection implements AutoCloseable {
         boolean manualStream = init.stream().isPresent();
         final int channelHandle = wrapError(LibDataChannelNative.rtcCreateDataChannelEx(peerHandle, label, reliability.isUnordered(), reliability.isUnreliable(), reliability.maxPacketLifeTime().toMillis(), reliability.maxRetransmits(), init.protocol(), init.isNegotiated(), stream, manualStream));
         final DataChannel channel = new DataChannel(this, channelHandle);
-        this.channels.put(channelHandle, channel);
+        this.channels.put(channelHandle, new DataChannelState(channel));
         return channel;
     }
 

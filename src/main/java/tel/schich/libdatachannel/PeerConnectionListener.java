@@ -4,9 +4,9 @@ import tel.schich.jniaccess.JNIAccess;
 
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 class PeerConnectionListener {
     private final PeerConnection peer;
@@ -18,12 +18,6 @@ class PeerConnectionListener {
     private final List<PeerConnectionCallback.SignalingStateChange> signalingStateChange = new CopyOnWriteArrayList<>();
     private final List<PeerConnectionCallback.DataChannel> dataChannel = new CopyOnWriteArrayList<>();
     private final List<PeerConnectionCallback.Track> track = new CopyOnWriteArrayList<>();
-    private final ConcurrentMap<Integer, List<DataChannelCallback.Open>> channelOpen = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Integer, List<DataChannelCallback.Closed>> channelClosed = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Integer, List<DataChannelCallback.Error>> channelError = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Integer, List<DataChannelCallback.Message>> channelMessage = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Integer, List<DataChannelCallback.BufferedAmountLow>> channelBufferedAmountLow = new ConcurrentHashMap<>();
-    private final ConcurrentMap<Integer, List<DataChannelCallback.Available>> channelAvailable = new ConcurrentHashMap<>();
 
     public PeerConnectionListener(PeerConnection peer) {
         this.peer = peer;
@@ -61,32 +55,35 @@ class PeerConnectionListener {
         track.add(handler);
     }
 
-    private static <T> void addChannelHandler(int handle, ConcurrentMap<Integer, List<T>> handlers, T handler) {
-        handlers.computeIfAbsent(handle, (ignored) -> new CopyOnWriteArrayList<>()).add(handler);
+    private <T> void addChannelHandler(int handle, BiConsumer<DataChannelState, T> consumer, T handler) {
+        final DataChannelState state = peer.channelState(handle);
+        if (state != null) {
+            consumer.accept(state, handler);
+        }
     }
 
     void registerHandler(int channelHandle, DataChannelCallback.Open handler) {
-        addChannelHandler(channelHandle, channelOpen, handler);
+        addChannelHandler(channelHandle, DataChannelState::registerHandler, handler);
     }
 
     void registerHandler(int channelHandle, DataChannelCallback.Closed handler) {
-        addChannelHandler(channelHandle, channelClosed, handler);
+        addChannelHandler(channelHandle, DataChannelState::registerHandler, handler);
     }
 
     void registerHandler(int channelHandle, DataChannelCallback.Error handler) {
-        addChannelHandler(channelHandle, channelError, handler);
+        addChannelHandler(channelHandle, DataChannelState::registerHandler, handler);
     }
 
     void registerHandler(int channelHandle, DataChannelCallback.Message handler) {
-        addChannelHandler(channelHandle, channelMessage, handler);
+        addChannelHandler(channelHandle, DataChannelState::registerHandler, handler);
     }
 
     void registerHandler(int channelHandle, DataChannelCallback.BufferedAmountLow handler) {
-        addChannelHandler(channelHandle, channelBufferedAmountLow, handler);
+        addChannelHandler(channelHandle, DataChannelState::registerHandler, handler);
     }
 
     void registerHandler(int channelHandle, DataChannelCallback.Available handler) {
-        addChannelHandler(channelHandle, channelAvailable, handler);
+        addChannelHandler(channelHandle, DataChannelState::registerHandler, handler);
     }
 
     @JNIAccess
@@ -137,73 +134,87 @@ class PeerConnectionListener {
 
     @JNIAccess
     void onDataChannel(int channelHandle) {
-        final DataChannel channel = peer.getChannel(channelHandle);
+        final DataChannelState state = peer.channelState(channelHandle);
         for (PeerConnectionCallback.DataChannel handler : dataChannel) {
-            handler.handleChannel(peer, channel);
+            handler.handleChannel(peer, state.channel);
         }
     }
 
     @JNIAccess
     void onTrack(int trackHandle) {
-        final Track track = peer.getTrack(trackHandle);
+        final Track track = peer.trackState(trackHandle);
         for (PeerConnectionCallback.Track handler : this.track) {
             handler.handleTrack(peer, track);
         }
     }
 
+    private void withChannel(int handle, Consumer<DataChannelState> consumer) {
+        final DataChannelState state = peer.channelState(handle);
+        if (state != null) {
+            consumer.accept(state);
+        }
+    }
+
     @JNIAccess
     void onChannelOpen(int channelHandle) {
-        final DataChannel channel = peer.getChannel(channelHandle);
-        for (DataChannelCallback.Open handler : channelOpen.get(channelHandle)) {
-            handler.onOpen(channel);
-        }
+        withChannel(channelHandle, s -> {
+            for (DataChannelCallback.Open handler : s.openHandlers) {
+                handler.onOpen(s.channel);
+            }
+        });
     }
 
     @JNIAccess
     void onChannelClosed(int channelHandle) {
-        final DataChannel channel = peer.getChannel(channelHandle);
-        for (DataChannelCallback.Closed handler : channelClosed.get(channelHandle)) {
-            handler.onClose(channel);
-        }
+        withChannel(channelHandle, s -> {
+            for (DataChannelCallback.Closed handler : s.closedHandlers) {
+                handler.onClose(s.channel);
+            }
+        });
     }
 
     @JNIAccess
     void onChannelError(int channelHandle, String error) {
-        final DataChannel channel = peer.getChannel(channelHandle);
-        for (DataChannelCallback.Error handler : channelError.get(channelHandle)) {
-            handler.onError(channel, error);
-        }
+        withChannel(channelHandle, s -> {
+            for (DataChannelCallback.Error handler : s.errorHandlers) {
+                handler.onError(s.channel, error);
+            }
+        });
     }
 
     @JNIAccess
     void onChannelTextMessage(int channelHandle, String message) {
-        final DataChannel channel = peer.getChannel(channelHandle);
-        for (DataChannelCallback.Message handler : channelMessage.get(channelHandle)) {
-            handler.onText(channel, message);
-        }
+        withChannel(channelHandle, s -> {
+            for (DataChannelCallback.Message handler : s.messageHandlers) {
+                handler.onText(s.channel, message);
+            }
+        });
     }
 
     @JNIAccess
     void onChannelBinaryMessage(int channelHandle, ByteBuffer message) {
-        final DataChannel channel = peer.getChannel(channelHandle);
-        for (DataChannelCallback.Message handler : channelMessage.get(channelHandle)) {
-            handler.onBinary(channel, message);
-        }
+        withChannel(channelHandle, s -> {
+            for (DataChannelCallback.Message handler : s.messageHandlers) {
+                handler.onBinary(s.channel, message);
+            }
+        });
     }
 
     @JNIAccess
     void onChannelBufferedAmountLow(int channelHandle) {
-        final DataChannel channel = peer.getChannel(channelHandle);
-        for (DataChannelCallback.BufferedAmountLow handler : channelBufferedAmountLow.get(channelHandle)) {
-            handler.onBufferedAmountLow(channel);
-        }
+        withChannel(channelHandle, s -> {
+            for (DataChannelCallback.BufferedAmountLow handler : s.bufferedAmountLowHandlers) {
+                handler.onBufferedAmountLow(s.channel);
+            }
+        });
     }
 
     @JNIAccess
     void onChannelAvailable(int channelHandle) {
-        final DataChannel channel = peer.getChannel(channelHandle);
-        for (DataChannelCallback.Available handler : channelAvailable.get(channelHandle)) {
-            handler.onAvailable(channel);
-        }
+        withChannel(channelHandle, s -> {
+            for (DataChannelCallback.Available handler : s.availableHandlers) {
+                handler.onAvailable(s.channel);
+            }
+        });
     }
 }

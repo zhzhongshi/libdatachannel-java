@@ -40,6 +40,7 @@ public class Track implements AutoCloseable {
     @Override
     public void close() {
         wrapError(LibDataChannelNative.rtcDeleteTrack(trackHandle));
+        peer.dropTrackState(trackHandle);
     }
 
     public enum Direction {

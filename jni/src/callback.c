@@ -78,7 +78,17 @@ void RTC_API handle_channel_error(int channelHandle, const char *error, void *pt
 }
 
 void RTC_API handle_channel_message(int channelHandle, const char *message, int size, void *ptr) {
-
+    struct jvm_callback* cb = ptr;
+    JNIEnv* env;
+    (*cb->vm)->AttachCurrentThreadAsDaemon(cb->vm, (void **)&env, NULL);
+    if (size < 0) {
+        jstring text = (*env)->NewStringUTF(env, message);
+        call_tel_schich_libdatachannel_PeerConnectionListener_onChannelTextMessage(env, cb->instance, channelHandle, text);
+    } else {
+        jobject buffer = (*env)->NewDirectByteBuffer(env, (void*)message, size);
+        call_tel_schich_libdatachannel_PeerConnectionListener_onChannelBinaryMessage(env, cb->instance, channelHandle, buffer);
+    }
+    (*cb->vm)->DetachCurrentThread(cb->vm);
 }
 
 void RTC_API handle_channel_buffered_amount_low(int channelHandle, void *ptr) {
