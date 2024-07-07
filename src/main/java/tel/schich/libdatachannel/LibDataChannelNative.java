@@ -17,6 +17,7 @@ public class LibDataChannelNative {
     public static native int rtcSetRemoteDescription(int peerHandle, String sdp, String type);
     public static native String rtcGetRemoteDescription(int peerHandle);
     public static native String rtcGetRemoteDescriptionType(int peerHandle);
+    public static native int rtcAddRemoteCandidate(int peerHandle, String candidate, String mediaId);
     public static native String rtcGetLocalAddress(int peerHandle);
     public static native String rtcGetRemoteAddress(int peerHandle);
 
@@ -25,7 +26,10 @@ public class LibDataChannelNative {
     public static native String rtcGetTrackDescription(int trackHandle);
     public static native int rtcGetTrackDirection(int trackHandle);
     public static native String rtcGetTrackMid(int trackHandle);
+    public static native int rtcDeleteTrack(int trackHandle);
 
+    public static native int rtcGetMaxDataChannelStream(int peerHandle);
+    public static native int rtcGetRemoteMaxMessageSize(int peerHandle);
     public static native int rtcCreateDataChannelEx(int peerHandle, String label, boolean unordered, boolean unreliable, long maxPacketLifeTime, int maxRetransmits, String protocol, boolean negotiated, int stream, boolean manualStream);
     public static native int rtcClose(int channelHandle);
     public static native int rtcDelete(int channelHandle);

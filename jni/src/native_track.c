@@ -36,3 +36,7 @@ JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGe
 JNIEXPORT jstring JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetTrackMid(JNIEnv *env, jclass clazz, jint trackHandle) {
     return get_dynamic_string(env, rtcGetTrackMid, trackHandle);
 }
+
+JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcDeleteTrack(JNIEnv *env, jclass clazz, jint trackHandle) {
+    return rtcDeleteTrack(trackHandle);
+}

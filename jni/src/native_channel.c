@@ -5,6 +5,14 @@
 #include "jni-c-to-java.h"
 #include "util.h"
 
+JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetMaxDataChannelStream(JNIEnv *env, jclass clazz, jint peerHandle) {
+    return rtcGetMaxDataChannelStream(peerHandle);
+}
+
+JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetRemoteMaxMessageSize(JNIEnv *env, jclass clazz, jint peerHandle) {
+    return rtcGetRemoteMaxMessageSize(peerHandle);
+}
+
 JNIEXPORT jint JNICALL
 Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreateDataChannelEx(JNIEnv *env, jclass clazz, jint peerHandle,
                                                                            jstring label, jboolean unordered,
@@ -16,7 +24,7 @@ Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreateDataChannelEx(JNIEn
             .reliability = {
                     .unordered = unordered,
                     .unreliable = unreliable,
-                    .maxPacketLifeTime = maxRetransmits,
+                    .maxPacketLifeTime = maxPacketLifeTime,
                     .maxRetransmits = maxRetransmits,
             },
             .protocol = NULL,

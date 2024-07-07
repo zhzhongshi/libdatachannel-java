@@ -110,6 +110,38 @@ JNIEXPORT jstring JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rt
     return get_dynamic_string(env, rtcGetRemoteDescriptionType, peerHandle);
 }
 
+JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcAddRemoteCandidate(JNIEnv *env, jclass clazz, jint peerHandle, jstring candidate, jstring mediaId) {
+    const char* c_candidate = NULL;
+    if (candidate != NULL) {
+        c_candidate = (*env)->GetStringUTFChars(env, candidate, NULL);
+        if (c_candidate == NULL) {
+            throw_tel_schich_libdatachannel_exception_NativeOperationException(env, errno);
+            return EXCEPTION_THROWN;
+        }
+    }
+    const char* c_mediaId = NULL;
+    if (mediaId != NULL) {
+        c_mediaId = (*env)->GetStringUTFChars(env, mediaId, NULL);
+        if (c_mediaId == NULL) {
+            if (c_candidate != NULL) {
+                (*env)->ReleaseStringUTFChars(env, candidate, c_candidate);
+            }
+            throw_tel_schich_libdatachannel_exception_NativeOperationException(env, errno);
+            return EXCEPTION_THROWN;
+        }
+    }
+
+    int result = rtcAddRemoteCandidate(peerHandle, c_candidate, c_mediaId);
+    if (c_candidate != NULL) {
+        (*env)->ReleaseStringUTFChars(env, candidate, c_candidate);
+    }
+    if (c_mediaId != NULL) {
+        (*env)->ReleaseStringUTFChars(env, mediaId, c_mediaId);
+    }
+
+    return result;
+}
+
 JNIEXPORT jstring JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetLocalAddress(JNIEnv *env, jclass clazz, jint peerHandle) {
     return get_dynamic_string(env, rtcGetLocalAddress, peerHandle);
 }

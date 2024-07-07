@@ -70,8 +70,8 @@ public class PeerConnection implements AutoCloseable {
         // TODO close channels explicitly?
 
         // Blocks until all callbacks have returned (except a callback calling this)
-        wrapError(LibDataChannelNative.rtcClosePeerConnection(this.peerHandle));
-        wrapError(LibDataChannelNative.rtcDeletePeerConnection(this.peerHandle));
+        wrapError(LibDataChannelNative.rtcClosePeerConnection(peerHandle));
+        wrapError(LibDataChannelNative.rtcDeletePeerConnection(peerHandle));
     }
 
     /**
@@ -84,13 +84,13 @@ public class PeerConnection implements AutoCloseable {
     }
 
     public void onLocalDescription(PeerConnectionCallback.LocalDescription cb) {
-        INSTANCE.rtcSetLocalDescriptionCallback(this.peerHandle, (pc, sdp, type, ptr) -> {
+        INSTANCE.rtcSetLocalDescriptionCallback(peerHandle, (pc, sdp, type, ptr) -> {
             cb.handleDescription(this, sdp.getString(0), type.getString(0));
         });
     }
 
     public void onLocalCandidate(PeerConnectionCallback.LocalCandidate cb) {
-        INSTANCE.rtcSetLocalCandidateCallback(this.peerHandle, (pc, cand, mid, ptr) -> {
+        INSTANCE.rtcSetLocalCandidateCallback(peerHandle, (pc, cand, mid, ptr) -> {
             cb.handleCandidate(this, cand.getString(0), mid.getString(0));
         });
     }
@@ -158,7 +158,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the current remote description type
      */
     public String remoteDescriptionType() {
-        return LibDataChannelNative.rtcGetRemoteDescriptionType(this.peerHandle);
+        return LibDataChannelNative.rtcGetRemoteDescriptionType(peerHandle);
     }
 
     /**
@@ -168,7 +168,7 @@ public class PeerConnection implements AutoCloseable {
      * @param candidate a null-terminated SDP string representing the candidate (with or without the "a=" prefix)
      */
     public void addRemoteCandidate(String candidate) {
-        var code = INSTANCE.rtcAddRemoteCandidate(this.peerHandle, candidate, null);
+        addRemoteCandidate(candidate, null);
     }
 
     /**
@@ -180,7 +180,7 @@ public class PeerConnection implements AutoCloseable {
      *                  autodetection
      */
     public void addRemoteCandidate(String candidate, String mid) {
-        var code = INSTANCE.rtcAddRemoteCandidate(this.peerHandle, candidate, mid);
+        wrapError(LibDataChannelNative.rtcAddRemoteCandidate(peerHandle, candidate, mid));
     }
 
     private static InetSocketAddress parseAddress(String rawAddress) {
@@ -198,7 +198,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the local address
      */
     public InetSocketAddress localAddress() {
-        return parseAddress(LibDataChannelNative.rtcGetLocalAddress(this.peerHandle));
+        return parseAddress(LibDataChannelNative.rtcGetLocalAddress(peerHandle));
     }
 
     /**
@@ -209,7 +209,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the remote address
      */
     public InetSocketAddress remoteAddress() {
-        return parseAddress(LibDataChannelNative.rtcGetRemoteAddress(this.peerHandle));
+        return parseAddress(LibDataChannelNative.rtcGetRemoteAddress(peerHandle));
     }
 
     /**
@@ -227,7 +227,7 @@ public class PeerConnection implements AutoCloseable {
      * @return maximum stream ID
      */
     public int maxDataChannelStream() {
-        return INSTANCE.rtcGetMaxDataChannelStream(this.peerHandle);
+        return LibDataChannelNative.rtcGetMaxDataChannelStream(peerHandle);
     }
 
     /**
@@ -236,33 +236,33 @@ public class PeerConnection implements AutoCloseable {
      * @return the maximum message size
      */
     public int remoteMaxMessageSize() {
-        return INSTANCE.rtcGetRemoteMaxMessageSize(this.peerHandle);
+        return LibDataChannelNative .rtcGetRemoteMaxMessageSize(peerHandle);
     }
 
     public void onStateChange(PeerConnectionCallback.StateChange cb) {
         if (cb == null) {
-            var code = INSTANCE.rtcSetStateChangeCallback(this.peerHandle, null);
+            var code = INSTANCE.rtcSetStateChangeCallback(peerHandle, null);
             return;
         }
-        var code = INSTANCE.rtcSetStateChangeCallback(this.peerHandle, (pc, state, ptr) -> {
+        var code = INSTANCE.rtcSetStateChangeCallback(peerHandle, (pc, state, ptr) -> {
             cb.handleChange(this, PeerState.of(state));
         });
     }
 
     public void onGatheringStateChange(PeerConnectionCallback.GatheringStateChange cb) {
-        INSTANCE.rtcSetGatheringStateChangeCallback(this.peerHandle, (pc, state, ptr) -> {
+        INSTANCE.rtcSetGatheringStateChangeCallback(peerHandle, (pc, state, ptr) -> {
             cb.handleGatherChange(this, GatheringState.of(state));
         });
     }
 
     public void onDataChannel(PeerConnectionCallback.DataChannel cb) {
-        final var code = INSTANCE.rtcSetDataChannelCallback(this.peerHandle, (pc, dc, ptr) -> {
+        final var code = INSTANCE.rtcSetDataChannelCallback(peerHandle, (pc, dc, ptr) -> {
             cb.handleDC(this, channels.get(dc));
         });
     }
 
     public void onTrack(PeerConnectionCallback.Track cb) {
-        INSTANCE.rtcSetTrackCallback(this.peerHandle, (pc, tr, ptr) -> {
+        INSTANCE.rtcSetTrackCallback(peerHandle, (pc, tr, ptr) -> {
             cb.handleTrack(this, tr);
         });
     }
@@ -296,11 +296,10 @@ public class PeerConnection implements AutoCloseable {
      * @return the created data channel
      */
     public DataChannel createDataChannel(String label, DataChannelInitSettings init) {
-
         final DataChannelReliability reliability = init.reliability();
         int stream = init.stream().orElse(0);
         boolean manualStream = init.stream().isPresent();
-        final int channelHandle = wrapError(LibDataChannelNative.rtcCreateDataChannelEx(this.peerHandle, label, reliability.isUnordered(), reliability.isUnreliable(), reliability.maxPacketLifeTime().toMillis(), reliability.maxRetransmits(), init.protocol(), init.isNegotiated(), stream, manualStream));
+        final int channelHandle = wrapError(LibDataChannelNative.rtcCreateDataChannelEx(peerHandle, label, reliability.isUnordered(), reliability.isUnreliable(), reliability.maxPacketLifeTime().toMillis(), reliability.maxRetransmits(), init.protocol(), init.isNegotiated(), stream, manualStream));
         final DataChannel channel = new DataChannel(this, channelHandle);
         this.channels.put(channelHandle, channel);
         return channel;

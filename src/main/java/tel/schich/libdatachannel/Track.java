@@ -1,6 +1,6 @@
 package tel.schich.libdatachannel;
 
-import static generated.DatachannelLibrary.INSTANCE;
+import static tel.schich.libdatachannel.Util.wrapError;
 
 import java.util.Map;
 
@@ -17,6 +17,9 @@ public class Track implements AutoCloseable {
         this.trackHandle = trackHandle;
     }
 
+    public PeerConnection peer() {
+        return peer;
+    }
 
     // After this function has been called, tr must not be used in a function call anymore. This function will block until all scheduled callbacks
     // of tr return (except the one this function might be called in) and no other callback will be called for tr after it returns.
@@ -36,7 +39,7 @@ public class Track implements AutoCloseable {
 
     @Override
     public void close() {
-        Util.wrapError(INSTANCE.rtcDeleteTrack(this.trackHandle));
+        wrapError(LibDataChannelNative.rtcDeleteTrack(trackHandle));
     }
 
     public enum Direction {
