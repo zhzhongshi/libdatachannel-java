@@ -20,6 +20,7 @@ public class LibDataChannelNative {
     public static native int rtcAddRemoteCandidate(int peerHandle, String candidate, String mediaId);
     public static native String rtcGetLocalAddress(int peerHandle);
     public static native String rtcGetRemoteAddress(int peerHandle);
+    public static native CandidatePair rtcGetSelectedCandidatePair(int peerHandle);
 
     public static native int rtcAddTrack(int peerHandle, String sdp);
     public static native int rtcAddTrackEx(int peerHandle, int direction, int codec);

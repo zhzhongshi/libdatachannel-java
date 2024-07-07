@@ -1,6 +1,7 @@
 package tel.schich.libdatachannel;
 
 import static generated.DatachannelLibrary.INSTANCE;
+import static tel.schich.libdatachannel.Util.parseAddress;
 import static tel.schich.libdatachannel.Util.wrapError;
 
 import java.io.ByteArrayOutputStream;
@@ -13,7 +14,7 @@ import java.util.Map;
 
 public class PeerConnection implements AutoCloseable {
     private final int peerHandle;
-    private Map<Integer, DataChannel> channels = new HashMap<>();
+    private final Map<Integer, DataChannel> channels = new HashMap<>();
 
     private PeerConnection(int peerHandle) {
         this.peerHandle = peerHandle;
@@ -54,10 +55,7 @@ public class PeerConnection implements AutoCloseable {
                 config.portRangeEnd,
                 config.mtu,
                 config.maxMessageSize);
-        if (result < 0) {
-            throw new IllegalStateException("Error Code: " + result); // TODO what are error codes
-        }
-        return new PeerConnection(result);
+        return new PeerConnection(wrapError(result));
     }
 
     /**
@@ -183,13 +181,6 @@ public class PeerConnection implements AutoCloseable {
         wrapError(LibDataChannelNative.rtcAddRemoteCandidate(peerHandle, candidate, mid));
     }
 
-    private static InetSocketAddress parseAddress(String rawAddress) {
-        int colonIndex = rawAddress.lastIndexOf(':');
-        String ip = rawAddress.substring(0, colonIndex);
-        int port = Integer.parseInt(rawAddress.substring(colonIndex + 1));
-        return InetSocketAddress.createUnresolved(ip, port);
-    }
-
     /**
      * Retrieves the current local address, i.e. the network address of the currently selected local candidate. The address will have the format
      * "IP_ADDRESS:PORT", where IP_ADDRESS may be either IPv4 or IPv6. The call might fail if the PeerConnection is not in state RTC_CONNECTED, and
@@ -216,7 +207,9 @@ public class PeerConnection implements AutoCloseable {
      * Retrieves the currently selected candidate pair. The call may fail if the state is not RTC_CONNECTED, and the selected candidate pair might
      * change after connection.
      */
-    // TODO rtcGetSelectedCandidatePair?
+    public CandidatePair selectedCandidatePair() {
+        return LibDataChannelNative.rtcGetSelectedCandidatePair(peerHandle);
+    }
 
 
     /**

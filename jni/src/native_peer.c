@@ -149,3 +149,20 @@ JNIEXPORT jstring JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rt
 JNIEXPORT jstring JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetRemoteAddress(JNIEnv *env, jclass clazz, jint peerHandle) {
     return get_dynamic_string(env, rtcGetRemoteAddress, peerHandle);
 }
+
+JNIEXPORT jobject JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetSelectedCandidatePair(JNIEnv *env, jclass clazz, jint peerHandle) {
+    int bufSize = 50;
+    char *local = malloc(bufSize);
+    if (local == NULL) {
+        throw_tel_schich_libdatachannel_exception_NativeOperationException(env, errno);
+        return NULL;
+    }
+    char *remote = malloc(bufSize);
+    if (remote == NULL) {
+        throw_tel_schich_libdatachannel_exception_NativeOperationException(env, errno);
+        return NULL;
+    }
+
+    wrap_error(env, rtcGetSelectedCandidatePair(peerHandle, local, bufSize, remote, bufSize));
+    return call_tel_schich_libdatachannel_CandidatePair_parse_cstr(env, local, remote);
+}
