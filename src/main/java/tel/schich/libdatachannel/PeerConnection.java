@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -47,10 +48,18 @@ public class PeerConnection implements AutoCloseable {
      * @return the peer connection
      */
     public static PeerConnection createPeer(PeerConnectionConfiguration config) {
+        String proxyServer = null;
+        if (config.proxyServer != null) {
+            proxyServer = config.proxyServer.toASCIIString();
+        }
+        String bindAddress = null;
+        if (config.bindAddress != null) {
+            bindAddress = config.bindAddress.toString();
+        }
         int result = LibDataChannelNative.rtcCreatePeerConnection(
                 iceUrisToCStrings(config.iceServers),
-                config.proxyServer.toASCIIString(),
-                config.bindAddress.toString(),
+                proxyServer,
+                bindAddress,
                 config.certificateType.state,
                 config.iceTransportPolicy.state,
                 config.enableIceTcp,
@@ -326,5 +335,18 @@ public class PeerConnection implements AutoCloseable {
     public Track addTrack(TrackInit init) {
         final int trackHandle = wrapError(LibDataChannelNative.rtcAddTrackEx(peerHandle, init.direction().direction, init.codec().codec));
         return new Track(this, trackHandle);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PeerConnection)) return false;
+        PeerConnection that = (PeerConnection) o;
+        return peerHandle == that.peerHandle;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(peerHandle);
     }
 }

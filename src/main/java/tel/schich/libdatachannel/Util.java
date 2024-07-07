@@ -11,7 +11,6 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -44,13 +43,20 @@ class Util {
         if (result > 0) {
             return result;
         }
-        return switch (result) {
-            case ERR_SUCCESS -> 0;
-            case ERR_INVALID -> throw new InvalidException();
-            case ERR_FAILURE -> throw new FailureException();
-            case ERR_NOT_AVAIL -> throw new NotAvailableException();
-            case ERR_TOO_SMALL -> throw new TooSmallException();
-            default -> throw new UnknownFailureException(result);
-        };
+
+        switch (result) {
+            case ERR_SUCCESS:
+                return 0;
+            case ERR_INVALID:
+                throw new InvalidException();
+            case ERR_FAILURE:
+                throw new FailureException();
+            case ERR_NOT_AVAIL:
+                throw new NotAvailableException();
+            case ERR_TOO_SMALL:
+                throw new TooSmallException();
+            default:
+                throw new UnknownFailureException(result);
+        }
     }
 }

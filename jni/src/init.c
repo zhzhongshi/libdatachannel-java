@@ -4,7 +4,7 @@
 #include "jni-c-to-java.h"
 
 static JavaVM* global_JVM;
-    
+
 void logger_callback(rtcLogLevel level, const char *message) {
     JNIEnv* env;
     (*global_JVM)->AttachCurrentThreadAsDaemon(global_JVM, (void **)&env, NULL);
@@ -17,7 +17,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
     global_JVM = jvm;
     rtcInitLogger(RTC_LOG_VERBOSE, &logger_callback);
     rtcPreload();
-    return 0;
+    return JNI_VERSION_10;
 }
 
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *jvm, void *reserved)

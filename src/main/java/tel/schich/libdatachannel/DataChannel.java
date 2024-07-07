@@ -5,6 +5,7 @@ import static tel.schich.libdatachannel.Util.wrapError;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -288,5 +289,18 @@ public class DataChannel implements AutoCloseable {
      */
     public DataChannelReliability reliability() {
         return LibDataChannelNative.rtcGetDataChannelReliability(channelHandle);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof DataChannel)) return false;
+        DataChannel channel = (DataChannel) o;
+        return channelHandle == channel.channelHandle;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(channelHandle);
     }
 }

@@ -14,8 +14,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HexFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -48,7 +48,14 @@ public class Main {
 
     }
 
-    public record Offer(DataChannel channel, String sdp) implements AutoCloseable {
+    public static class Offer implements AutoCloseable {
+        private final DataChannel channel;
+        private final String sdp;
+
+        public Offer(DataChannel channel, String sdp) {
+            this.channel = channel;
+            this.sdp = sdp;
+        }
 
         public void answer(String remoteSdp) {
             channel.peer().setAnswer(remoteSdp);
@@ -82,6 +89,19 @@ public class Main {
                 }
             });
             return offer;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Offer)) return false;
+            Offer offer = (Offer) o;
+            return Objects.equals(channel, offer.channel) && Objects.equals(sdp, offer.sdp);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(channel, sdp);
         }
     }
 
@@ -176,24 +196,24 @@ public class Main {
                 var rawIp = line.substring(2, idIdx);
                 var id = line.substring(idIdx + 1);
 
-                var ipWithPort = switch (ipv) {
-                    case "4" -> {
+                IpWithPort ipWithPort = null;
+                switch (ipv) {
+                    case "4":
                         // shortSdp += '.4' + type + btoa(ip + ":" + port).replaceAll("=+$", "") + "#" + id
                         final var ipv4 = base64toString(rawIp);
 
                         final var ipv4Parts = ipv4.split(":");
-                        yield new IpWithPort(ipv4Parts[0], ipv4Parts[1]);
-                    }
-                    case "6" -> {
+                        ipWithPort = new IpWithPort(ipv4Parts[0], ipv4Parts[1]);
+                        break;
+                    case "6":
                         // shortSdp += '.6' + type + ipv6ToBase64(ip) + ":" + port + "#" + id;
                         final var splitV6 = rawIp.split(":");
                         final var hexIpv6 = base64toHex(splitV6[0]);
                         var ipv6 = IntStream.range(0, hexIpv6.length() / 4).mapToObj(i -> hexIpv6.substring(i * 4, i * 4 + 4))
                                 .collect(Collectors.joining(":"));
 
-                        yield new IpWithPort(ipv6, splitV6[1]);
-                    }
-                    default -> null;
+                        ipWithPort = new IpWithPort(ipv6, splitV6[1]);
+                        break;
                 };
 
 
@@ -203,8 +223,7 @@ public class Main {
                         appPort = ipWithPort.port;
                     }
                     final var s = ipWithPort.ip.contains(":") ? "::" : "0.0.0.0";
-                    candidates.add(("a=candidate:%s 1 UDP %d %s %s typ %s raddr %s rport 0")
-                            .formatted(id, nCandidate++, ipWithPort.ip, ipWithPort.port, type, s));
+                    candidates.add(String.format("a=candidate:%s 1 UDP %d %s %s typ %s raddr %s rport 0", id, nCandidate++, ipWithPort.ip, ipWithPort.port, type, s));
                 }
 
             }
@@ -217,34 +236,32 @@ public class Main {
             return null;
         }
 
-        remoteDescription = """
-                v=0
-                o=- 1337 0 IN IP4 0.0.0.0
-                s=-
-                t=0 0
-                a=group:BUNDLE 0
-                a=msid-semantic: WMS
-                m=application %s UDP webrtc-datachannel
-                a=sendrecv
-                c=IN %s
-                %s
-                a=end-of-candidates
-                a=ice-ufrag:%s
-                a=ice-pwd:%s
-                a=ice-options:trickle
-                a=fingerprint:sha-256 %s
-                a=setup:active
-                a=mid:0
-                a=sctp-port:5000
-                a=max-message-size:262144
-                """.formatted(appPort, cValue, cans, iceFrag, iceLine, fingerprint)
+        remoteDescription = String.format("v=0" +
+                "o=- 1337 0 IN IP4 0.0.0.0" +
+                "s=-" +
+                "t=0 0" +
+                "a=group:BUNDLE 0" +
+                "a=msid-semantic: WMS" +
+                "m=application %s UDP webrtc-datachannel" +
+                "a=sendrecv" +
+                "c=IN %s" +
+                "%s" +
+                "a=end-of-candidates" +
+                "a=ice-ufrag:%s" +
+                "a=ice-pwd:%s" +
+                "a=ice-options:trickle" +
+                "a=fingerprint:sha-256 %s" +
+                "a=setup:active" +
+                "a=mid:0" +
+                "a=sctp-port:5000" +
+                "a=max-message-size:262144", appPort, cValue, cans, iceFrag, iceLine, fingerprint)
         ;
         return remoteDescription;
     }
 
     private static String base64toHex(final String line) {
-        var decodedLine = Base64.getDecoder().decode(line);
-        return HexFormat.of().formatHex(decodedLine);
+        byte[] decodedLine = Base64.getDecoder().decode(line);
+        return bytesToHex(decodedLine);
     }
 
     private static String base64toString(final String line) {
@@ -270,7 +287,45 @@ public class Main {
     }
 
 
-    private record IpWithPort(String ip, String port) {
+    private static class IpWithPort {
+        private final String ip;
+        private final String port;
 
+        public IpWithPort(String ip, String port) {
+            this.ip = ip;
+            this.port = port;
+        }
+
+        public String ip() {
+            return ip;
+        }
+
+        public String port() {
+            return port;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof IpWithPort)) return false;
+            IpWithPort that = (IpWithPort) o;
+            return Objects.equals(ip, that.ip) && Objects.equals(port, that.port);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(ip, port);
+        }
+    }
+
+    private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
+    public static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = HEX_ARRAY[v >>> 4];
+            hexChars[j * 2 + 1] = HEX_ARRAY[v & 0x0F];
+        }
+        return new String(hexChars);
     }
 }

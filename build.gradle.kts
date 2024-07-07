@@ -13,8 +13,7 @@ group = "org.example"
 version = "1.0-SNAPSHOT"
 
 java.toolchain {
-    vendor = JvmVendorSpec.ADOPTIUM
-    languageVersion = JavaLanguageVersion.of(21)
+    languageVersion = JavaLanguageVersion.of(11)
 }
 
 repositories {
@@ -156,5 +155,6 @@ dependencies {
 
     testImplementation(platform("org.junit:junit-bom:5.10.0"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation("ch.qos.logback:logback-classic:1.5.6")
     testImplementation(files(packageNativeForHost))
 }

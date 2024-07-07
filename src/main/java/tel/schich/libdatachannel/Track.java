@@ -3,6 +3,7 @@ package tel.schich.libdatachannel;
 import static tel.schich.libdatachannel.Util.wrapError;
 
 import java.util.Map;
+import java.util.Objects;
 
 
 // Tracks are not implemented yet!
@@ -41,6 +42,19 @@ public class Track implements AutoCloseable {
     public void close() {
         wrapError(LibDataChannelNative.rtcDeleteTrack(trackHandle));
         peer.dropTrackState(trackHandle);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Track)) return false;
+        Track track = (Track) o;
+        return trackHandle == track.trackHandle;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(trackHandle);
     }
 
     public enum Direction {

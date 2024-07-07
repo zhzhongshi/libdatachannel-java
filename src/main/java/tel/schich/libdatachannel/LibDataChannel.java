@@ -8,7 +8,7 @@ public class LibDataChannel {
     private static final Logger LOGGER = LoggerFactory.getLogger(LibDataChannel.class);
     private static volatile boolean initialized = false;
 
-    public static final String LIB_NAME = "libdatachannel-java";
+    public static final String LIB_NAME = "datachannel-java";
 
     /**
      * Initializes the library by loading the native library.

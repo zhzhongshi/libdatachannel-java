@@ -32,7 +32,7 @@ endif()
 
 add_link_options(-z noexecstack -fvisibility=hidden)
 
-add_library(datachannel_java SHARED
+add_library(datachannel-java SHARED
         generated/jni-c-to-java.c
         src/init.c
         src/util.c
@@ -40,4 +40,4 @@ add_library(datachannel_java SHARED
         src/native_peer.c
         src/native_track.c
         src/callback.c)
-target_link_libraries(datachannel_java PRIVATE datachannel-static)
+target_link_libraries(datachannel-java PRIVATE datachannel-static)
