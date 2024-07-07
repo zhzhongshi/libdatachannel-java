@@ -4,7 +4,7 @@ import tel.schich.jniaccess.JNIAccess;
 
 public class InvalidException extends LibDataChannelException {
     @JNIAccess
-    public InvalidException() {
-        super(ERR_INVALID);
+    public InvalidException(String message) {
+        super(ERR_INVALID, message);
     }
 }

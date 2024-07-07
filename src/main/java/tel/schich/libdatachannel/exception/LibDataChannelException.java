@@ -9,7 +9,8 @@ public class LibDataChannelException extends RuntimeException {
 
     private final int errorCode;
 
-    public LibDataChannelException(final int errorCode) {
+    public LibDataChannelException(final int errorCode, String message) {
+        super(message);
         this.errorCode = errorCode;
     }
 

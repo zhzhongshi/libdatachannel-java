@@ -15,15 +15,15 @@ public class PeerConnectionConfiguration {
     public static final PeerConnectionConfiguration DEFAULT = new PeerConnectionConfiguration(Collections.emptyList(),
             null,
             null,
-    CertificateType.RTC_CERTIFICATE_DEFAULT,
-    IceTransportPolicy.RTC_TRANSPORT_POLICY_ALL,
+            CertificateType.DEFAULT,
+            IceTransportPolicy.DEFAULT,
             false,
             false,
             false,
             false,
             (short) 0,
             (short) 0,
-    AUTO_MTU,
+            AUTO_MTU,
             0);
 
     final List<URI> iceServers;
@@ -224,7 +224,10 @@ public class PeerConnectionConfiguration {
     public enum CertificateType {
         RTC_CERTIFICATE_DEFAULT(0), // ECDSA
         RTC_CERTIFICATE_ECDSA(1),
-        RTC_CERTIFICATE_RSA(2);
+        RTC_CERTIFICATE_RSA(2),
+        ;
+
+        public final static CertificateType DEFAULT = RTC_CERTIFICATE_DEFAULT;
 
         private static final Map<Integer, CertificateType> MAP = Util.mappedEnum(CertificateType.values(), s -> s.state);
         final int state;
@@ -242,6 +245,9 @@ public class PeerConnectionConfiguration {
         RTC_TRANSPORT_POLICY_ALL(0),
         RTC_TRANSPORT_POLICY_RELAY(1),
         ;
+
+        public static final IceTransportPolicy DEFAULT = RTC_TRANSPORT_POLICY_ALL;
+
         private static final Map<Integer, IceTransportPolicy> MAP = Util.mappedEnum(IceTransportPolicy.values(), s -> s.state);
         final int state;
 

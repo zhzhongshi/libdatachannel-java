@@ -123,7 +123,7 @@ public class DataChannel implements AutoCloseable {
     }
 
     private void sendMessage(ByteBuffer data, int offset, int length) {
-        wrapError(LibDataChannelNative.rtcSendMessage(channelHandle, data, offset, length));
+        wrapError("sendMessage", LibDataChannelNative.rtcSendMessage(channelHandle, data, offset, length));
     }
 
     /**
@@ -159,8 +159,8 @@ public class DataChannel implements AutoCloseable {
      */
     @Override
     public void close() {
-        wrapError(LibDataChannelNative.rtcClose(channelHandle));
-        wrapError(LibDataChannelNative.rtcDeleteDataChannel(channelHandle));
+        wrapError("rtcClose", LibDataChannelNative.rtcClose(channelHandle));
+        wrapError("rtcDeleteDataChannel", LibDataChannelNative.rtcDeleteDataChannel(channelHandle));
         peer.dropChannelState(channelHandle);
     }
 
@@ -188,7 +188,7 @@ public class DataChannel implements AutoCloseable {
      * @return the maximum message size
      */
     public int maxMessageSize() {
-        return wrapError(LibDataChannelNative.rtcMaxMessageSize(channelHandle));
+        return wrapError("rtcMaxMessageSize", LibDataChannelNative.rtcMaxMessageSize(channelHandle));
     }
 
     /**
@@ -203,7 +203,7 @@ public class DataChannel implements AutoCloseable {
      * @param amount the amount
      */
     public void bufferedAmountLowThreshold(int amount) {
-        wrapError(LibDataChannelNative.rtcSetBufferedAmountLowThreshold(channelHandle, amount));
+        wrapError("rtcSetBufferedAmountLowThreshold", LibDataChannelNative.rtcSetBufferedAmountLowThreshold(channelHandle, amount));
     }
 
     /**
@@ -240,7 +240,7 @@ public class DataChannel implements AutoCloseable {
      * @return the available amount
      */
     public int availableAmount() {
-        return wrapError(LibDataChannelNative.rtcGetAvailableAmount(channelHandle));
+        return wrapError("rtcGetAvailableAmount", LibDataChannelNative.rtcGetAvailableAmount(channelHandle));
     }
 
     /**
@@ -252,7 +252,7 @@ public class DataChannel implements AutoCloseable {
      * @return the buffered amount
      */
     public int bufferedAmount() {
-        return wrapError(LibDataChannelNative.rtcGetBufferedAmount(channelHandle));
+        return wrapError("rtcGetBufferedAmount", LibDataChannelNative.rtcGetBufferedAmount(channelHandle));
     }
 
     /**
@@ -261,7 +261,7 @@ public class DataChannel implements AutoCloseable {
      * @return the stream id
      */
     public int streamId() {
-        return wrapError(LibDataChannelNative.rtcGetDataChannelStream(channelHandle));
+        return wrapError("rtcGetDataChannelStream", LibDataChannelNative.rtcGetDataChannelStream(channelHandle));
     }
 
     /**

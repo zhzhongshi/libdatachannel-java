@@ -25,17 +25,17 @@ JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcAd
 }
 
 JNIEXPORT jstring JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetTrackDescription(JNIEnv *env, jclass clazz, jint trackHandle) {
-    return get_dynamic_string(env, rtcGetTrackDescription, trackHandle);
+    return GET_DYNAMIC_STRING(env, rtcGetTrackDescription, trackHandle);
 }
 
 JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetTrackDirection(JNIEnv *env, jclass clazz, jint trackHandle) {
     rtcDirection direction;
-    wrap_error(env, rtcGetTrackDirection(trackHandle, &direction));
+    WRAP_ERROR(env, rtcGetTrackDirection(trackHandle, &direction));
     return direction;
 }
 
 JNIEXPORT jstring JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetTrackMid(JNIEnv *env, jclass clazz, jint trackHandle) {
-    return get_dynamic_string(env, rtcGetTrackMid, trackHandle);
+    return GET_DYNAMIC_STRING(env, rtcGetTrackMid, trackHandle);
 }
 
 JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcDeleteTrack(JNIEnv *env, jclass clazz, jint trackHandle) {

@@ -5,11 +5,30 @@
 
 static JavaVM* global_JVM;
 
-void logger_callback(rtcLogLevel level, const char *message) {
+JNIEnv* get_jni_env() {
+    // make sure it's initialized
+    if (global_JVM == NULL) {
+        return NULL;
+    }
     JNIEnv* env;
-    (*global_JVM)->AttachCurrentThreadAsDaemon(global_JVM, (void **)&env, NULL);
-    call_tel_schich_libdatachannel_LibDataChannel_log_cstr(env, level, (char*)message);
-    (*global_JVM)->DetachCurrentThread(global_JVM);
+    jint result = (*global_JVM)->GetEnv(global_JVM, (void **)&env, JNI_VERSION_10);
+    if (result == JNI_EDETACHED) {
+        result = (*global_JVM)->AttachCurrentThreadAsDaemon(global_JVM, (void**)&env, NULL);
+    }
+    if (result != JNI_OK) {
+        return NULL;
+    }
+    return env;
+}
+
+void logger_callback(rtcLogLevel level, const char *message) {
+    if (message == NULL) {
+        return;
+    }
+    JNIEnv* env = get_jni_env();
+    if (env != NULL) {
+        call_tel_schich_libdatachannel_LibDataChannel_log_cstr(env, level, message);
+    }
 }
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
@@ -22,6 +41,6 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
 
 JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *jvm, void *reserved)
 {
-    global_JVM = NULL;
     rtcCleanup();
+    global_JVM = NULL;
 }

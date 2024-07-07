@@ -3,13 +3,33 @@
 
 #include <rtc/rtc.h>
 #include <jni-c-to-java.h>
+#include "global_jvm.h"
 
-#define EXCEPTION_THROWN -999
+#define EXCEPTION_THROWN (-999)
 
 typedef int(RTC_API *get_dynamic_string_func)(int peerHandle, char* buffer, int size);
 
-jstring get_dynamic_string(JNIEnv *env, get_dynamic_string_func func, int handle);
+#define GET_DYNAMIC_STRING(env, func, handle) get_dynamic_string(env, #func, func, handle)
 
-jint wrap_error(JNIEnv* env, int result);
+jstring get_dynamic_string(JNIEnv *env, const char* func_name, get_dynamic_string_func func, int handle);
+
+#define WRAP_ERROR(env, expr) wrap_error(env, #expr, (expr))
+
+jint wrap_error(JNIEnv* env, const char* message, int result);
+
+void throw_native_exception(JNIEnv *env, char *msg);
+
+#define THROW_FAILED_GET_STR(env, expr) throw_native_exception(env, "failed to get string for " #expr)
+
+#define THROW_FAILED_MALLOC(env, expr) throw_native_exception(env, "failed to malloc for " #expr)
+
+#define DISPATCH_JNI(target, args...) \
+    struct jvm_callback* cb = ptr; \
+    JNIEnv* env = get_jni_env();      \
+    if (env == NULL) return;\
+    target(env, cb->instance, args)
+
+#define SETUP_HANDLER(peer, api, target) \
+    if (WRAP_ERROR(env, api(peer, target)) == EXCEPTION_THROWN) return EXCEPTION_THROWN
 
 #endif //LIBDATACHANNEL_JNI_UTIL_H

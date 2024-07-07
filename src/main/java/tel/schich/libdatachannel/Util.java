@@ -39,7 +39,7 @@ class Util {
         return Arrays.stream(values).collect(Collectors.toMap(mapper, s -> s));
     }
 
-    static int wrapError(int result) throws LibDataChannelException {
+    static int wrapError(String operation, int result) throws LibDataChannelException {
         if (result > 0) {
             return result;
         }
@@ -48,15 +48,15 @@ class Util {
             case ERR_SUCCESS:
                 return 0;
             case ERR_INVALID:
-                throw new InvalidException();
+                throw new InvalidException(operation);
             case ERR_FAILURE:
-                throw new FailureException();
+                throw new FailureException(operation);
             case ERR_NOT_AVAIL:
-                throw new NotAvailableException();
+                throw new NotAvailableException(operation);
             case ERR_TOO_SMALL:
-                throw new TooSmallException();
+                throw new TooSmallException(operation);
             default:
-                throw new UnknownFailureException(result);
+                throw new UnknownFailureException(result, operation);
         }
     }
 }

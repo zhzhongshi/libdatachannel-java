@@ -4,7 +4,7 @@ import tel.schich.jniaccess.JNIAccess;
 
 public class NotAvailableException extends LibDataChannelException {
     @JNIAccess
-    public NotAvailableException() {
-        super(ERR_NOT_AVAIL);
+    public NotAvailableException(String message) {
+        super(ERR_NOT_AVAIL, message);
     }
 }

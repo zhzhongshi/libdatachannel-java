@@ -4,6 +4,39 @@
 #include <malloc.h>
 #include "jni-c-to-java.h"
 #include "util.h"
+#include "callback.h"
+
+void RTC_API handle_channel_open(int channelHandle, void *ptr) {
+    DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onChannelOpen, channelHandle);
+}
+
+void RTC_API handle_channel_closed(int channelHandle, void *ptr) {
+    DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onChannelClosed, channelHandle);
+}
+
+void RTC_API handle_channel_error(int channelHandle, const char *error, void *ptr) {
+    DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onChannelError_cstr, channelHandle, error);
+}
+
+void RTC_API handle_channel_message(int channelHandle, const char *message, int size, void *ptr) {
+    struct jvm_callback* cb = ptr;
+    JNIEnv* env = get_jni_env();
+    if (size < 0) {
+        jstring text = (*env)->NewStringUTF(env, message);
+        call_tel_schich_libdatachannel_PeerConnectionListener_onChannelTextMessage(env, cb->instance, channelHandle, text);
+    } else {
+        jobject buffer = (*env)->NewDirectByteBuffer(env, (void*)message, size);
+        call_tel_schich_libdatachannel_PeerConnectionListener_onChannelBinaryMessage(env, cb->instance, channelHandle, buffer);
+    }
+}
+
+void RTC_API handle_channel_buffered_amount_low(int channelHandle, void *ptr) {
+    DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onChannelBufferedAmountLow, channelHandle);
+}
+
+void RTC_API handle_channel_available(int channelHandle, void *ptr) {
+    DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onChannelAvailable, channelHandle);
+}
 
 JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetMaxDataChannelStream(JNIEnv *env, jclass clazz, jint peerHandle) {
     return rtcGetMaxDataChannelStream(peerHandle);
@@ -40,8 +73,14 @@ Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreateDataChannelEx(JNIEn
         init.protocol = (*env)->GetStringUTFChars(env, protocol, NULL);
     }
 
-    jint result = wrap_error(env, rtcCreateDataChannelEx(peerHandle, c_label, &init));
+    jint result = WRAP_ERROR(env, rtcCreateDataChannelEx(peerHandle, c_label, &init));
     rtcSetUserPointer(result, rtcGetUserPointer(peerHandle));
+    SETUP_HANDLER(result, rtcSetOpenCallback, handle_channel_open);
+    SETUP_HANDLER(result, rtcSetClosedCallback, handle_channel_closed);
+    SETUP_HANDLER(result, rtcSetErrorCallback, handle_channel_error);
+    SETUP_HANDLER(result, rtcSetMessageCallback, handle_channel_message);
+    SETUP_HANDLER(result, rtcSetBufferedAmountLowCallback, handle_channel_buffered_amount_low);
+    SETUP_HANDLER(result, rtcSetAvailableCallback, handle_channel_available);
 
     if (c_label != NULL) {
         (*env)->ReleaseStringUTFChars(env, label, c_label);
@@ -95,7 +134,7 @@ JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcSe
 
 JNIEXPORT jobject JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcReceiveMessage(JNIEnv *env, jclass clazz, jint channelHandle) {
     int size = 0;
-    wrap_error(env, rtcReceiveMessage(channelHandle, NULL, &size));
+    WRAP_ERROR(env, rtcReceiveMessage(channelHandle, NULL, &size));
     if (size == 0) {
         return NULL;
     }
@@ -104,7 +143,7 @@ JNIEXPORT jobject JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rt
     if (result == RTC_ERR_NOT_AVAIL) {
         return NULL;
     }
-    wrap_error(env, result);
+    WRAP_ERROR(env, result);
 
     return (*env)->NewDirectByteBuffer(env, buffer, size);
 }
@@ -127,32 +166,32 @@ JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcRe
     if (result == RTC_ERR_TOO_SMALL) {
         return -size;
     }
-    wrap_error(env, result);
+    WRAP_ERROR(env, result);
     return size;
 }
 
 JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetAvailableAmount(JNIEnv *env, jclass clazz, jint channelHandle) {
-    return wrap_error(env, rtcGetAvailableAmount(channelHandle));
+    return WRAP_ERROR(env, rtcGetAvailableAmount(channelHandle));
 }
 
 JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetBufferedAmount(JNIEnv *env, jclass clazz, jint channelHandle) {
-    return wrap_error(env, rtcGetBufferedAmount(channelHandle));
+    return WRAP_ERROR(env, rtcGetBufferedAmount(channelHandle));
 }
 
 JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetDataChannelStream(JNIEnv *env, jclass clazz, jint channelHandle) {
-    return wrap_error(env, rtcGetDataChannelStream(channelHandle));
+    return WRAP_ERROR(env, rtcGetDataChannelStream(channelHandle));
 }
 
 JNIEXPORT jstring JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetDataChannelLabel(JNIEnv *env, jclass clazz, jint channelHandle) {
-    return get_dynamic_string(env, rtcGetDataChannelLabel, channelHandle);
+    return GET_DYNAMIC_STRING(env, rtcGetDataChannelLabel, channelHandle);
 }
 
 JNIEXPORT jstring JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetDataChannelProtocol(JNIEnv *env, jclass clazz, jint channelHandle) {
-    return get_dynamic_string(env, rtcGetDataChannelProtocol, channelHandle);
+    return GET_DYNAMIC_STRING(env, rtcGetDataChannelProtocol, channelHandle);
 }
 
 JNIEXPORT jobject JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetDataChannelReliability(JNIEnv *env, jclass clazz, jint channelHandle) {
     rtcReliability reliability;
-    wrap_error(env, rtcGetDataChannelReliability(channelHandle, &reliability));
+    WRAP_ERROR(env, rtcGetDataChannelReliability(channelHandle, &reliability));
     return create_tel_schich_libdatachannel_DataChannelReliability(env, reliability.unordered, reliability.unreliable, reliability.maxPacketLifeTime, (jint) reliability.maxRetransmits);
 }

@@ -4,7 +4,7 @@ import tel.schich.jniaccess.JNIAccess;
 
 public class UnknownFailureException extends LibDataChannelException {
     @JNIAccess
-    public UnknownFailureException(int code) {
-        super(code);
+    public UnknownFailureException(int code, String message) {
+        super(code, message);
     }
 }

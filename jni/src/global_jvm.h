@@ -1,3 +1,3 @@
 #include <jni.h>
 
-static JavaVM * global_JVM;
+JNIEnv* get_jni_env();
