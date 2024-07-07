@@ -39,7 +39,7 @@ public class Main {
             // then set answer from remote peer
             peer.setAnswer(readInput());
             // register message callback (negative size indicates a null-terminated string otherwise binary data)
-            channel.onMessage((c, message, size) -> System.out.println("Incoming message: " + new String(message)));
+            channel.onMessage((DataChannel c, String message) -> System.out.println("Incoming message: " + message));
             // block until channel is closed
             CompletableFuture<Void> future = new CompletableFuture<>();
             channel.onClose(c -> future.completeAsync(() -> null));
@@ -130,21 +130,9 @@ public class Main {
         System.out.println("Error: " + error);
     }
 
-    private static void handleMessage(final DataChannel c, final byte[] message, final int size) {
-        if (size < 0) {
-            final var msg = new String(message);
-            System.out.println("In: " + msg);
-            if (msg.equals("exit")) {
-                c.sendMessage("Bye!");
-                System.out.println("Ok we are done");
-                c.close();
-            } else {
-                c.sendMessage("You said things...");
-            }
-        } else {
-            c.sendMessage("What is this file?");
-            System.out.println("Got a file");
-        }
+    private static void handleMessage(final DataChannel c, ByteBuffer data) {
+        c.sendMessage("What is this file?");
+        System.out.println("Got a file if size: " + data.remaining());
     }
 
     private static void handleOpen(final DataChannel c) {

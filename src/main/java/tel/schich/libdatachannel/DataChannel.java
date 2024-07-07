@@ -1,6 +1,5 @@
 package tel.schich.libdatachannel;
 
-import static generated.DatachannelLibrary.INSTANCE;
 import static tel.schich.libdatachannel.Util.ensureDirect;
 import static tel.schich.libdatachannel.Util.wrapError;
 
@@ -36,16 +35,16 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onOpen(DataChannelCallback.Open cb) {
-        Util.registerCallback(INSTANCE::rtcSetOpenCallback, cb, (id, ptr) -> cb.onOpen(this), channelHandle);
+        peer.listener.registerHandler(channelHandle, cb);
     }
 
     /**
-     * Registers a {@link DataChannelCallback.Close}
+     * Registers a {@link DataChannelCallback.Closed}
      *
      * @param cb the callback or null to remove it
      */
-    public void onClose(DataChannelCallback.Close cb) {
-        Util.registerCallback(INSTANCE::rtcSetClosedCallback, cb, (id, ptr) -> cb.onClose(this), channelHandle);
+    public void onClose(DataChannelCallback.Closed cb) {
+        peer.listener.registerHandler(channelHandle, cb);
     }
 
     /**
@@ -54,7 +53,7 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onError(DataChannelCallback.Error cb) {
-        Util.registerCallback(INSTANCE::rtcSetErrorCallback, cb, (id, error, ptr) -> cb.onError(this, error.getString(0)), channelHandle);
+        peer.listener.registerHandler(channelHandle, cb);
     }
 
     /**
@@ -63,10 +62,45 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onMessage(DataChannelCallback.Message cb) {
-        // TODO binary message?
-        Util.registerCallback(INSTANCE::rtcSetMessageCallback, cb, (id, message, size, ptr) -> {
-            cb.onMessage(this, size < 0 ? message.getString(0).getBytes() : message.getByteArray(0, size), size);
-        }, channelHandle);
+        peer.listener.registerHandler(channelHandle, cb);
+    }
+
+    /**
+     * Registers a {@link DataChannelCallback.Message}
+     *
+     * @param cb the callback or null to remove it
+     */
+    public void onMessage(DataChannelCallback.TextMessage cb) {
+        peer.listener.registerHandler(channelHandle, new DataChannelCallback.Message() {
+            @Override
+            public void onText(DataChannel channel, String text) {
+                cb.onText(channel, text);
+            }
+
+            @Override
+            public void onBinary(DataChannel channel, ByteBuffer buffer) {
+
+            }
+        });
+    }
+
+    /**
+     * Registers a {@link DataChannelCallback.Message}
+     *
+     * @param cb the callback or null to remove it
+     */
+    public void onMessage(DataChannelCallback.BinaryMessage cb) {
+        peer.listener.registerHandler(channelHandle, new DataChannelCallback.Message() {
+            @Override
+            public void onText(DataChannel channel, String text) {
+
+            }
+
+            @Override
+            public void onBinary(DataChannel channel, ByteBuffer buffer) {
+                onBinary(channel, buffer);
+            }
+        });
     }
 
     /**
@@ -75,7 +109,7 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onBufferedAmountLow(DataChannelCallback.BufferedAmountLow cb) {
-        Util.registerCallback(INSTANCE::rtcSetBufferedAmountLowCallback, cb, (id, ptr) -> cb.onBufferedAmountLow(this), channelHandle);
+        peer.listener.registerHandler(channelHandle, cb);
     }
 
     /**
@@ -84,7 +118,7 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onAvailable(DataChannelCallback.Available cb) {
-        Util.registerCallback(INSTANCE::rtcSetAvailableCallback, cb, (id, ptr) -> cb.onAvailable(this), channelHandle);
+        peer.listener.registerHandler(channelHandle, cb);
     }
 
     private void sendMessage(ByteBuffer data, int offset, int length) {

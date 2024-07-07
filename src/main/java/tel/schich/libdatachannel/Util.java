@@ -1,6 +1,5 @@
 package tel.schich.libdatachannel;
 
-import generated.DatachannelLibrary;
 import tel.schich.libdatachannel.exception.FailureException;
 import tel.schich.libdatachannel.exception.InvalidException;
 import tel.schich.libdatachannel.exception.LibDataChannelException;
@@ -15,6 +14,12 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_FAILURE;
+import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_INVALID;
+import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_NOT_AVAIL;
+import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_SUCCESS;
+import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_TOO_SMALL;
 
 class Util {
 
@@ -40,20 +45,12 @@ class Util {
             return result;
         }
         return switch (result) {
-            case DatachannelLibrary.RTC_ERR_SUCCESS -> 0;
-            case DatachannelLibrary.RTC_ERR_INVALID -> throw new InvalidException();
-            case DatachannelLibrary.RTC_ERR_FAILURE -> throw new FailureException();
-            case DatachannelLibrary.RTC_ERR_NOT_AVAIL -> throw new NotAvailableException();
-            case DatachannelLibrary.RTC_ERR_TOO_SMALL -> throw new TooSmallException();
+            case ERR_SUCCESS -> 0;
+            case ERR_INVALID -> throw new InvalidException();
+            case ERR_FAILURE -> throw new FailureException();
+            case ERR_NOT_AVAIL -> throw new NotAvailableException();
+            case ERR_TOO_SMALL -> throw new TooSmallException();
             default -> throw new UnknownFailureException(result);
         };
-    }
-
-    static <C, A> void registerCallback(final BiFunction<Integer, C, Integer> cbRegister, final A apiCb, final C cb, final Integer channelId) {
-        if (apiCb == null) {
-            wrapError(cbRegister.apply(channelId, null));
-        } else {
-            wrapError(cbRegister.apply(channelId, cb));
-        }
     }
 }

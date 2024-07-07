@@ -7,4 +7,4 @@ public class NativeOperationException extends LibDataChannelException {
     public NativeOperationException(int code) {
         super(code);
     }
-        }
+}

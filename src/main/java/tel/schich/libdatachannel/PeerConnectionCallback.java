@@ -1,13 +1,11 @@
 package tel.schich.libdatachannel;
 
 public interface PeerConnectionCallback {
-
     /**
      * Called when the local description has been set.
      */
     @FunctionalInterface
     interface LocalDescription {
-
         void handleDescription(PeerConnection peer, String sdp, String type);
     }
 
@@ -16,7 +14,6 @@ public interface PeerConnectionCallback {
      */
     @FunctionalInterface
     interface LocalCandidate {
-
         void handleCandidate(PeerConnection peer, String candidate, String mediaId);
     }
 
@@ -25,8 +22,15 @@ public interface PeerConnectionCallback {
      */
     @FunctionalInterface
     interface StateChange {
-
         void handleChange(PeerConnection peer, PeerState state);
+    }
+
+    /**
+     * Called when the state of the Peer Connection has changed
+     */
+    @FunctionalInterface
+    interface IceStateChange {
+        void handleChange(PeerConnection peer, IceState state);
     }
 
     /**
@@ -34,8 +38,15 @@ public interface PeerConnectionCallback {
      */
     @FunctionalInterface
     interface GatheringStateChange {
+        void handleChange(PeerConnection peer, GatheringState state);
+    }
 
-        void handleGatherChange(PeerConnection peer, GatheringState state);
+    /**
+     * Called when the gathering state of the Peer Connection has changed
+     */
+    @FunctionalInterface
+    interface SignalingStateChange {
+        void handleChange(PeerConnection peer, SignalingState state);
     }
 
     /**
@@ -44,8 +55,7 @@ public interface PeerConnectionCallback {
      */
     @FunctionalInterface
     interface DataChannel {
-
-        void handleDC(PeerConnection peer, tel.schich.libdatachannel.DataChannel channel);
+        void handleChannel(PeerConnection peer, tel.schich.libdatachannel.DataChannel channel);
     }
 
     /**
@@ -53,7 +63,6 @@ public interface PeerConnectionCallback {
      */
     @FunctionalInterface
     interface Track {
-
-        void handleTrack(PeerConnection peer, int track); // TODO track object?
+        void handleTrack(PeerConnection peer, tel.schich.libdatachannel.Track track);
     }
 }

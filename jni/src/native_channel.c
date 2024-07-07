@@ -41,6 +41,7 @@ Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreateDataChannelEx(JNIEn
     }
 
     jint result = wrap_error(env, rtcCreateDataChannelEx(peerHandle, c_label, &init));
+    rtcSetUserPointer(result, rtcGetUserPointer(peerHandle));
 
     if (c_label != NULL) {
         (*env)->ReleaseStringUTFChars(env, label, c_label);

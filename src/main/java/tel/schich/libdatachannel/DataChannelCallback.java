@@ -1,5 +1,9 @@
 package tel.schich.libdatachannel;
 
+import org.w3c.dom.Text;
+
+import java.nio.ByteBuffer;
+
 /**
  * Callback interfaces for {@link DataChannel}
  */
@@ -18,7 +22,7 @@ interface DataChannelCallback {
      * Called when the channel was previously open and is now closed.
      */
     @FunctionalInterface
-    interface Close {
+    interface Closed {
 
         void onClose(DataChannel channel);
     }
@@ -38,10 +42,29 @@ interface DataChannelCallback {
      * While set, messages can't be received with {@link DataChannel#receiveMessage()}.
      * </p>
      */
-    @FunctionalInterface
-    interface Message {
+    interface Message extends TextMessage, BinaryMessage {
+    }
 
-        void onMessage(DataChannel channel, final byte[] message, final int size);
+    /**
+     * Called when the channel receives a message.
+     * <p>
+     * While set, messages can't be received with {@link DataChannel#receiveMessage()}.
+     * </p>
+     */
+    @FunctionalInterface
+    interface TextMessage {
+        void onText(DataChannel channel, String text);
+    }
+
+    /**
+     * Called when the channel receives a message.
+     * <p>
+     * While set, messages can't be received with {@link DataChannel#receiveMessage()}.
+     * </p>
+     */
+    @FunctionalInterface
+    interface BinaryMessage {
+        void onBinary(DataChannel channel, ByteBuffer buffer);
     }
 
     /**

@@ -1,6 +1,5 @@
 package tel.schich.libdatachannel;
 
-import static generated.DatachannelLibrary.INSTANCE;
 import static tel.schich.libdatachannel.Util.parseAddress;
 import static tel.schich.libdatachannel.Util.wrapError;
 
@@ -9,15 +8,20 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class PeerConnection implements AutoCloseable {
     private final int peerHandle;
-    private final Map<Integer, DataChannel> channels = new HashMap<>();
+    private final ConcurrentMap<Integer, DataChannel> channels;
+    private final ConcurrentMap<Integer, Track> tracks;
+    final PeerConnectionListener listener;
 
     private PeerConnection(int peerHandle) {
         this.peerHandle = peerHandle;
+        this.channels = new ConcurrentHashMap<>();
+        this.tracks = new ConcurrentHashMap<>();
+        this.listener = new PeerConnectionListener(this);
     }
 
     private static byte[] iceUrisToCStrings(Collection<URI> uris) {
@@ -55,7 +59,19 @@ public class PeerConnection implements AutoCloseable {
                 config.portRangeEnd,
                 config.mtu,
                 config.maxMessageSize);
-        return new PeerConnection(wrapError(result));
+
+        final PeerConnection peer = new PeerConnection(wrapError(result));
+        LibDataChannelNative.setupPeerConnectionListener(peer.peerHandle, peer.listener);
+
+        return peer;
+    }
+
+    DataChannel getChannel(int channelHandle) {
+        return channels.get(channelHandle);
+    }
+
+    Track getTrack(int trackHandle) {
+        return tracks.get(trackHandle);
     }
 
     /**
@@ -82,15 +98,11 @@ public class PeerConnection implements AutoCloseable {
     }
 
     public void onLocalDescription(PeerConnectionCallback.LocalDescription cb) {
-        INSTANCE.rtcSetLocalDescriptionCallback(peerHandle, (pc, sdp, type, ptr) -> {
-            cb.handleDescription(this, sdp.getString(0), type.getString(0));
-        });
+        listener.registerHandler(cb);
     }
 
     public void onLocalCandidate(PeerConnectionCallback.LocalCandidate cb) {
-        INSTANCE.rtcSetLocalCandidateCallback(peerHandle, (pc, cand, mid, ptr) -> {
-            cb.handleCandidate(this, cand.getString(0), mid.getString(0));
-        });
+        listener.registerHandler(cb);
     }
 
 
@@ -229,35 +241,31 @@ public class PeerConnection implements AutoCloseable {
      * @return the maximum message size
      */
     public int remoteMaxMessageSize() {
-        return LibDataChannelNative .rtcGetRemoteMaxMessageSize(peerHandle);
+        return LibDataChannelNative.rtcGetRemoteMaxMessageSize(peerHandle);
     }
 
     public void onStateChange(PeerConnectionCallback.StateChange cb) {
-        if (cb == null) {
-            var code = INSTANCE.rtcSetStateChangeCallback(peerHandle, null);
-            return;
-        }
-        var code = INSTANCE.rtcSetStateChangeCallback(peerHandle, (pc, state, ptr) -> {
-            cb.handleChange(this, PeerState.of(state));
-        });
+        listener.registerHandler(cb);
+    }
+
+    public void onIceStateChange(PeerConnectionCallback.IceStateChange cb) {
+        listener.registerHandler(cb);
     }
 
     public void onGatheringStateChange(PeerConnectionCallback.GatheringStateChange cb) {
-        INSTANCE.rtcSetGatheringStateChangeCallback(peerHandle, (pc, state, ptr) -> {
-            cb.handleGatherChange(this, GatheringState.of(state));
-        });
+        listener.registerHandler(cb);
+    }
+
+    public void onSignalingStateChange(PeerConnectionCallback.SignalingStateChange cb) {
+        listener.registerHandler(cb);
     }
 
     public void onDataChannel(PeerConnectionCallback.DataChannel cb) {
-        final var code = INSTANCE.rtcSetDataChannelCallback(peerHandle, (pc, dc, ptr) -> {
-            cb.handleDC(this, channels.get(dc));
-        });
+        listener.registerHandler(cb);
     }
 
     public void onTrack(PeerConnectionCallback.Track cb) {
-        INSTANCE.rtcSetTrackCallback(peerHandle, (pc, tr, ptr) -> {
-            cb.handleTrack(this, tr);
-        });
+        listener.registerHandler(cb);
     }
 
 
