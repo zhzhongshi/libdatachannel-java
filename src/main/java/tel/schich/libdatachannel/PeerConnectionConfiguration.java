@@ -1,7 +1,5 @@
 package tel.schich.libdatachannel;
 
-import tel.schich.libdatachannel.util.Util;
-
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;

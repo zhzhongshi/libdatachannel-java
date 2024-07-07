@@ -1,15 +1,11 @@
 package tel.schich.libdatachannel;
 
 import static generated.DatachannelLibrary.INSTANCE;
-import static generated.DatachannelLibrary.RTC_ERR_NOT_AVAIL;
-import static generated.DatachannelLibrary.RTC_ERR_SUCCESS;
-import static tel.schich.libdatachannel.util.Util.wrapError;
-
-import tel.schich.libdatachannel.util.JNAUtil;
-import tel.schich.libdatachannel.util.Util;
+import static tel.schich.libdatachannel.Util.ensureDirect;
+import static tel.schich.libdatachannel.Util.wrapError;
 
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 /**
@@ -70,7 +66,7 @@ public class DataChannel implements AutoCloseable {
         // TODO binary message?
         Util.registerCallback(INSTANCE::rtcSetMessageCallback, cb, (id, message, size, ptr) -> {
             cb.onMessage(this, size < 0 ? message.getString(0).getBytes() : message.getByteArray(0, size), size);
-        }, this.channelHandle);
+        }, channelHandle);
     }
 
     /**
@@ -79,7 +75,7 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onBufferedAmountLow(DataChannelCallback.BufferedAmountLow cb) {
-        Util.registerCallback(INSTANCE::rtcSetBufferedAmountLowCallback, cb, (id, ptr) -> cb.onBufferedAmountLow(this), this.channelHandle);
+        Util.registerCallback(INSTANCE::rtcSetBufferedAmountLowCallback, cb, (id, ptr) -> cb.onBufferedAmountLow(this), channelHandle);
     }
 
     /**
@@ -88,7 +84,11 @@ public class DataChannel implements AutoCloseable {
      * @param cb the callback or null to remove it
      */
     public void onAvailable(DataChannelCallback.Available cb) {
-        Util.registerCallback(INSTANCE::rtcSetAvailableCallback, cb, (id, ptr) -> cb.onAvailable(this), this.channelHandle);
+        Util.registerCallback(INSTANCE::rtcSetAvailableCallback, cb, (id, ptr) -> cb.onAvailable(this), channelHandle);
+    }
+
+    private void sendMessage(ByteBuffer data, int offset, int length) {
+        wrapError(LibDataChannelNative.rtcSendMessage(channelHandle, data, offset, length));
     }
 
     /**
@@ -96,8 +96,9 @@ public class DataChannel implements AutoCloseable {
      *
      * @param data the data
      */
-    public void sendMessage(byte[] data) {
-        INSTANCE.rtcSendMessage(this.channelHandle, JNAUtil.toPointer(data), data.length);
+    public void sendMessage(ByteBuffer data) {
+        ensureDirect(data);
+        sendMessage(data, data.position(), data.remaining());
     }
 
     /**
@@ -106,7 +107,12 @@ public class DataChannel implements AutoCloseable {
      * @param message the message
      */
     public void sendMessage(String message) {
-        INSTANCE.rtcSendMessage(this.channelHandle, message, -1);
+        byte[] bytes = message.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer data = ByteBuffer.allocateDirect(bytes.length + 1);
+        data.put(bytes);
+        data.put((byte)0);
+        data.flip();
+        sendMessage(data, data.position(), -1);
     }
 
     /**
@@ -118,8 +124,8 @@ public class DataChannel implements AutoCloseable {
      */
     @Override
     public void close() {
-        wrapError(LibDataChannelNative.rtcClose(this.channelHandle));
-        wrapError(LibDataChannelNative.rtcDelete(this.channelHandle));
+        wrapError(LibDataChannelNative.rtcClose(channelHandle));
+        wrapError(LibDataChannelNative.rtcDelete(channelHandle));
     }
 
     /**
@@ -128,7 +134,7 @@ public class DataChannel implements AutoCloseable {
      * @return true if closed
      */
     public boolean isClosed() {
-        return LibDataChannelNative.rtcIsClosed(this.channelHandle);
+        return LibDataChannelNative.rtcIsClosed(channelHandle);
     }
 
     /**
@@ -137,7 +143,7 @@ public class DataChannel implements AutoCloseable {
      * @return true if open
      */
     public boolean isOpen() {
-        return LibDataChannelNative.rtcIsOpen(this.channelHandle);
+        return LibDataChannelNative.rtcIsOpen(channelHandle);
     }
 
     /**
@@ -146,7 +152,7 @@ public class DataChannel implements AutoCloseable {
      * @return the maximum message size
      */
     public int maxMessageSize() {
-        return wrapError(INSTANCE.rtcMaxMessageSize(this.channelHandle));
+        return wrapError(LibDataChannelNative.rtcMaxMessageSize(channelHandle));
     }
 
     /**
@@ -161,7 +167,7 @@ public class DataChannel implements AutoCloseable {
      * @param amount the amount
      */
     public void bufferedAmountLowThreshold(int amount) {
-        wrapError(INSTANCE.rtcSetBufferedAmountLowThreshold(this.channelHandle, amount));
+        wrapError(LibDataChannelNative.rtcSetBufferedAmountLowThreshold(channelHandle, amount));
     }
 
     /**
@@ -172,18 +178,21 @@ public class DataChannel implements AutoCloseable {
      *
      * @return the received message
      */
-    public Optional<String> receiveMessage() {
-        // TODO buffer variant?
-        final var size = this.maxMessageSize();
-        final var buffer = ByteBuffer.allocate(size);
-        final var code = INSTANCE.rtcReceiveMessage(this.channelHandle, buffer, IntBuffer.wrap(new int[]{size}));
-        if (code == RTC_ERR_SUCCESS) {
-            return Optional.of(new String(buffer.array()));
-        } else if (code == RTC_ERR_NOT_AVAIL) {
-            return Optional.empty();
-        }
-        wrapError(code);
-        throw new IllegalStateException("Error: " + code);
+    public Optional<ByteBuffer> receiveMessage() {
+        return Optional.of(LibDataChannelNative.rtcReceiveMessage(channelHandle));
+    }
+
+    /**
+     * Returns a pending message if available.
+     * <p>
+     * The may only be called if the {@link #onMessage} callback is not set.
+     * </p>
+     *
+     * @return the bytes received or the negative size of the message if the buffer was too small
+     */
+    public int receiveMessage(ByteBuffer buffer) {
+        ensureDirect(buffer);
+        return LibDataChannelNative.rtcReceiveMessageInto(channelHandle, buffer, buffer.position(), buffer.remaining());
     }
 
     /**
@@ -195,7 +204,7 @@ public class DataChannel implements AutoCloseable {
      * @return the available amount
      */
     public int availableAmount() {
-        return wrapError(LibDataChannelNative.rtcGetAvailableAmount(this.channelHandle));
+        return wrapError(LibDataChannelNative.rtcGetAvailableAmount(channelHandle));
     }
 
     /**
@@ -207,7 +216,7 @@ public class DataChannel implements AutoCloseable {
      * @return the buffered amount
      */
     public int bufferedAmount() {
-        return wrapError(LibDataChannelNative.rtcGetBufferedAmount(this.channelHandle));
+        return wrapError(LibDataChannelNative.rtcGetBufferedAmount(channelHandle));
     }
 
     /**
@@ -216,7 +225,7 @@ public class DataChannel implements AutoCloseable {
      * @return the stream id
      */
     public int streamId() {
-        return wrapError(LibDataChannelNative.rtcGetDataChannelStream(this.channelHandle));
+        return wrapError(LibDataChannelNative.rtcGetDataChannelStream(channelHandle));
     }
 
     /**
@@ -245,17 +254,4 @@ public class DataChannel implements AutoCloseable {
     public DataChannelReliability reliability() {
         return LibDataChannelNative.rtcGetDataChannelReliability(channelHandle);
     }
-
-
-    // Adds a new Track on a Peer Connection. The Peer Connection does not need to be connected, however, the Track will be open only when the Peer Connection is connected.
-    // sdp: a null-terminated string specifying the corresponding media SDP. It must start with a m-line and include a mid parameter.
-    @SuppressWarnings("deprecation")
-    public Track addTrack(String sdp) {
-        // TODO implement me
-        final int trackHandle = wrapError(INSTANCE.rtcAddTrack(this.channelHandle, sdp));
-        // TODO final var track = Util.wrapError(INSTANCE.rtcAddTrackEx(this.channel, sdp));
-        return new Track(trackHandle, this);
-    }
-
-
 }

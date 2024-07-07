@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <rtc/rtc.h>
 #include <jni-java-to-c.h>
+#include <malloc.h>
 #include "jni-c-to-java.h"
 #include "util.h"
 
@@ -57,6 +58,64 @@ JNIEXPORT jboolean JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_r
 
 JNIEXPORT jboolean JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcIsOpen(JNIEnv *env, jclass clazz, jint channelHandle) {
     return rtcIsOpen(channelHandle);
+}
+
+JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcMaxMessageSize(JNIEnv *env, jclass clazz, jint channelHandle) {
+    return rtcMaxMessageSize(channelHandle);
+}
+
+JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcSetBufferedAmountLowThreshold(JNIEnv *env, jclass clazz, jint channelHandle, jint amount) {
+            return rtcSetBufferedAmountLowThreshold(channelHandle, amount);
+}
+
+JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcSendMessage(JNIEnv *env, jclass clazz, jint channelHandle, jobject data, jint offset, jint length) {
+    if (data == NULL) {
+        return RTC_ERR_SUCCESS;
+    }
+    char* buffer = (*env)->GetDirectBufferAddress(env, data);
+    if (buffer == NULL) {
+        return RTC_ERR_SUCCESS;
+    }
+    char* buffer_offset = buffer + offset;
+    return rtcSendMessage(channelHandle, buffer_offset, length);
+}
+
+JNIEXPORT jobject JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcReceiveMessage(JNIEnv *env, jclass clazz, jint channelHandle) {
+    int size = 0;
+    wrap_error(env, rtcReceiveMessage(channelHandle, NULL, &size));
+    if (size == 0) {
+        return NULL;
+    }
+    void* buffer = malloc(size);
+    int result = rtcReceiveMessage(channelHandle, buffer, &size);
+    if (result == RTC_ERR_NOT_AVAIL) {
+        return NULL;
+    }
+    wrap_error(env, result);
+
+    return (*env)->NewDirectByteBuffer(env, buffer, size);
+}
+
+JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcReceiveMessageInto(JNIEnv *env, jclass clazz, jint channelHandle, jobject buffer, jint offset, jint capacity) {
+    int size = capacity;
+    if (buffer == NULL) {
+        return 0;
+    }
+    void* base = (*env)->GetDirectBufferAddress(env, buffer);
+    if (base == NULL) {
+        return 0;
+    }
+    void* data = base + offset;
+
+    int result = rtcReceiveMessage(channelHandle, data, &size);
+    if (result == RTC_ERR_NOT_AVAIL) {
+        return 0;
+    }
+    if (result == RTC_ERR_TOO_SMALL) {
+        return -size;
+    }
+    wrap_error(env, result);
+    return size;
 }
 
 JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_rtcGetAvailableAmount(JNIEnv *env, jclass clazz, jint channelHandle) {

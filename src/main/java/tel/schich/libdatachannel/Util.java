@@ -1,4 +1,4 @@
-package tel.schich.libdatachannel.util;
+package tel.schich.libdatachannel;
 
 import generated.DatachannelLibrary;
 import tel.schich.libdatachannel.exception.FailureException;
@@ -8,13 +8,20 @@ import tel.schich.libdatachannel.exception.NotAvailableException;
 import tel.schich.libdatachannel.exception.TooSmallException;
 import tel.schich.libdatachannel.exception.UnknownFailureException;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class Util {
+class Util {
+
+    public static void ensureDirect(ByteBuffer buffer) {
+        if (!buffer.isDirect()) {
+            throw new IllegalArgumentException("data must be a direct ByteBuffer!");
+        }
+    }
 
     public static <T, K> Map<K, T> mappedEnum(final T[] values, Function<T, K> mapper) {
         return Arrays.stream(values).collect(Collectors.toMap(mapper, s -> s));

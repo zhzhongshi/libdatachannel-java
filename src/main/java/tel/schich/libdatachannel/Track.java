@@ -2,52 +2,88 @@ package tel.schich.libdatachannel;
 
 import static generated.DatachannelLibrary.INSTANCE;
 
-import tel.schich.libdatachannel.util.JNAUtil;
-import tel.schich.libdatachannel.util.Util;
-
-import java.nio.IntBuffer;
+import java.util.Map;
 
 
 // Tracks are not implemented yet!
 @Deprecated
 public class Track implements AutoCloseable {
 
-    private final Integer track;
-    private final DataChannel channel;
+    private final PeerConnection peer;
+    private final int trackHandle;
 
-    public Track(final Integer track, final DataChannel channel) {
-        this.track = track;
-        this.channel = channel;
-        throw new UnsupportedOperationException("Not fully implemented yet!");
+    public Track(final PeerConnection peer, final int trackHandle) {
+        this.peer = peer;
+        this.trackHandle = trackHandle;
     }
 
 
     // After this function has been called, tr must not be used in a function call anymore. This function will block until all scheduled callbacks
     // of tr return (except the one this function might be called in) and no other callback will be called for tr after it returns.
     public String description() {
-        return LibDataChannelNative.rtcGetTrackDescription(this.track);
+        return LibDataChannelNative.rtcGetTrackDescription(trackHandle);
     }
 
     // Retrieves the mid (media indentifier) of a Track.
     public String mediaId() {
-        return LibDataChannelNative.rtcGetTrackMid(this.track);
+        return LibDataChannelNative.rtcGetTrackMid(trackHandle);
     }
 
     // Retrieves the direction of a Track.
-    public TrackDirection direction() {
-        final var buffer = IntBuffer.allocate(1);
-        Util.wrapError(INSTANCE.rtcGetTrackDirection(this.track, buffer));
-        final var direction = buffer.get();
-        // TODO implement me
-        return null;
+    public Direction direction() {
+        return Direction.of(LibDataChannelNative.rtcGetTrackDirection(trackHandle));
     }
 
     @Override
     public void close() {
-        Util.wrapError(INSTANCE.rtcDeleteTrack(this.track));
+        Util.wrapError(INSTANCE.rtcDeleteTrack(this.trackHandle));
     }
 
-    public enum TrackDirection {
-        RTC_DIRECTION_SENDONLY, RTC_DIRECTION_RECVONLY, RTC_DIRECTION_SENDRECV, RTC_DIRECTION_INACTIVE, RTC_DIRECTION_UNKNOWN;
+    public enum Direction {
+        RTC_DIRECTION_UNKNOWN(0),
+        RTC_DIRECTION_SENDONLY(1),
+        RTC_DIRECTION_RECVONLY(2),
+        RTC_DIRECTION_SENDRECV(3),
+        RTC_DIRECTION_INACTIVE(4),
+        ;
+
+        public static final Direction DEFAULT = RTC_DIRECTION_UNKNOWN;
+
+        private static final Map<Integer, Direction> MAP = Util.mappedEnum(Direction.values(), s -> s.direction);
+        final int direction;
+
+        Direction(int direction) {
+            this.direction = direction;
+        }
+
+        static Direction of(final int direction) {
+            return MAP.get(direction);
+        }
+    }
+
+    public enum Codec {
+        RTC_CODEC_H264(0),
+        RTC_CODEC_VP8(1),
+        RTC_CODEC_VP9(2),
+        RTC_CODEC_H265(3),
+        RTC_CODEC_AV1(4),
+        RTC_CODEC_OPUS(128),
+        RTC_CODEC_PCMU(129),
+        RTC_CODEC_PCMA(130),
+        RTC_CODEC_AAC(131),
+        ;
+
+        public static final Codec DEFAULT = RTC_CODEC_H264;
+
+        private static final Map<Integer, Codec> MAP = Util.mappedEnum(Codec.values(), s -> s.codec);
+        final int codec;
+
+        Codec(int codec) {
+            this.codec = codec;
+        }
+
+        static Codec of(final int codec) {
+            return MAP.get(codec);
+        }
     }
 }

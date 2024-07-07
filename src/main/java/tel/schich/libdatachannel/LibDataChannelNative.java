@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import java.nio.ByteBuffer;
+
 public class LibDataChannelNative {
     static {
         LibDataChannel.initialize();
@@ -15,19 +17,25 @@ public class LibDataChannelNative {
     public static native int rtcSetRemoteDescription(int peerHandle, String sdp, String type);
     public static native String rtcGetRemoteDescription(int peerHandle);
     public static native String rtcGetRemoteDescriptionType(int peerHandle);
-
-    public static native int rtcCreateDataChannelEx(int peerHandle, String label, boolean unordered, boolean unreliable, long maxPacketLifeTime, int maxRetransmits, String protocol, boolean negotiated, int stream, boolean manualStream);
-
     public static native String rtcGetLocalAddress(int peerHandle);
     public static native String rtcGetRemoteAddress(int peerHandle);
 
+    public static native int rtcAddTrack(int peerHandle, String sdp);
+    public static native int rtcAddTrackEx(int peerHandle, int direction, int codec);
     public static native String rtcGetTrackDescription(int trackHandle);
+    public static native int rtcGetTrackDirection(int trackHandle);
     public static native String rtcGetTrackMid(int trackHandle);
 
+    public static native int rtcCreateDataChannelEx(int peerHandle, String label, boolean unordered, boolean unreliable, long maxPacketLifeTime, int maxRetransmits, String protocol, boolean negotiated, int stream, boolean manualStream);
     public static native int rtcClose(int channelHandle);
     public static native int rtcDelete(int channelHandle);
     public static native boolean rtcIsClosed(int channelHandle);
     public static native boolean rtcIsOpen(int channelHandle);
+    public static native int rtcMaxMessageSize(int channelHandle);
+    public static native int rtcSetBufferedAmountLowThreshold(int channelHandle, int amount);
+    public static native int rtcSendMessage(int channelHandle, ByteBuffer data, int offset, int length);
+    public static native ByteBuffer rtcReceiveMessage(int channelHandle);
+    public static native int rtcReceiveMessageInto(int channelHandle, ByteBuffer buffer, int offset, int capacity);
     public static native int rtcGetAvailableAmount(int channelHandle);
     public static native int rtcGetBufferedAmount(int channelHandle);
     public static native int rtcGetDataChannelStream(int channelHandle);

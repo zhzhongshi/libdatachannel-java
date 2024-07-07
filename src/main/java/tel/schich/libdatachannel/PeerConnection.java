@@ -1,7 +1,7 @@
 package tel.schich.libdatachannel;
 
 import static generated.DatachannelLibrary.INSTANCE;
-import static tel.schich.libdatachannel.util.Util.wrapError;
+import static tel.schich.libdatachannel.Util.wrapError;
 
 import java.io.ByteArrayOutputStream;
 import java.net.InetSocketAddress;
@@ -304,5 +304,17 @@ public class PeerConnection implements AutoCloseable {
         final DataChannel channel = new DataChannel(this, channelHandle);
         this.channels.put(channelHandle, channel);
         return channel;
+    }
+
+    // Adds a new Track on a Peer Connection. The Peer Connection does not need to be connected, however, the Track will be open only when the Peer Connection is connected.
+    // sdp: a null-terminated string specifying the corresponding media SDP. It must start with a m-line and include a mid parameter.
+    public Track addTrack(String sdp) {
+        final int trackHandle = wrapError(LibDataChannelNative.rtcAddTrack(peerHandle, sdp));
+        return new Track(this, trackHandle);
+    }
+
+    public Track addTrack(TrackInit init) {
+        final int trackHandle = wrapError(LibDataChannelNative.rtcAddTrackEx(peerHandle, init.direction().direction, init.codec().codec));
+        return new Track(this, trackHandle);
     }
 }

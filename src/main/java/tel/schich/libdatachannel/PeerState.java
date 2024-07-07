@@ -1,7 +1,5 @@
 package tel.schich.libdatachannel;
 
-import tel.schich.libdatachannel.util.Util;
-
 import java.util.Map;
 
 public enum PeerState {

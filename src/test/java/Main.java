@@ -9,6 +9,7 @@ import tel.schich.libdatachannel.PeerState;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -150,7 +151,7 @@ public class Main {
         System.out.println("Connection Open!");
         c.sendMessage("Hello There!");
         try {
-            c.sendMessage(Files.readAllBytes(Path.of("img.png")));
+            c.sendMessage(ByteBuffer.wrap(Files.readAllBytes(Path.of("img.png"))));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
