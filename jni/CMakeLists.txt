@@ -36,6 +36,8 @@ add_library(datachannel_java SHARED
         generated/jni-c-to-java.c
         src/native_callback.c
         src/init.c
-        src/native.c
-        src/util.c)
+        src/util.c
+        src/native_channel.c
+        src/native_peer.c
+        src/native_track.c)
 target_link_libraries(datachannel_java PRIVATE datachannel-static)
