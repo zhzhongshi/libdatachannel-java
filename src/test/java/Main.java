@@ -237,24 +237,24 @@ public class Main {
         }
 
         remoteDescription = String.format("v=0" +
-                "o=- 1337 0 IN IP4 0.0.0.0" +
-                "s=-" +
-                "t=0 0" +
-                "a=group:BUNDLE 0" +
-                "a=msid-semantic: WMS" +
-                "m=application %s UDP webrtc-datachannel" +
-                "a=sendrecv" +
-                "c=IN %s" +
-                "%s" +
-                "a=end-of-candidates" +
-                "a=ice-ufrag:%s" +
-                "a=ice-pwd:%s" +
-                "a=ice-options:trickle" +
-                "a=fingerprint:sha-256 %s" +
-                "a=setup:active" +
-                "a=mid:0" +
-                "a=sctp-port:5000" +
-                "a=max-message-size:262144", appPort, cValue, cans, iceFrag, iceLine, fingerprint)
+                "\no=- 1337 0 IN IP4 0.0.0.0" +
+                "\ns=-" +
+                "\nt=0 0" +
+                "\na=group:BUNDLE 0" +
+                "\na=msid-semantic: WMS" +
+                "\nm=application %s UDP webrtc-datachannel" +
+                "\na=sendrecv" +
+                "\nc=IN %s" +
+                "\n%s" +
+                "\na=end-of-candidates" +
+                "\na=ice-ufrag:%s" +
+                "\na=ice-pwd:%s" +
+                "\na=ice-options:trickle" +
+                "\na=fingerprint:sha-256 %s" +
+                "\na=setup:active" +
+                "\na=mid:0" +
+                "\na=sctp-port:5000" +
+                "\na=max-message-size:262144", appPort, cValue, cans, iceFrag, iceLine, fingerprint)
         ;
         return remoteDescription;
     }
