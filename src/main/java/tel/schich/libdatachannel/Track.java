@@ -10,11 +10,7 @@ import static tel.schich.libdatachannel.Util.wrapError;
 import java.util.Map;
 import java.util.Objects;
 
-
-// Tracks are not implemented yet!
-@Deprecated
 public class Track implements AutoCloseable {
-
     private final PeerConnection peer;
     private final int trackHandle;
 

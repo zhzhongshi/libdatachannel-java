@@ -1,12 +1,17 @@
 package tel.schich.libdatachannel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcClosePeerConnection;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcDeletePeerConnection;
 import static tel.schich.libdatachannel.LibDataChannelNative.setupPeerConnectionListener;
 import static tel.schich.libdatachannel.Util.parseAddress;
 import static tel.schich.libdatachannel.Util.wrapError;
+import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_SUCCESS;
 
 import java.io.ByteArrayOutputStream;
+import java.lang.ref.Cleaner;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -18,9 +23,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 public class PeerConnection implements AutoCloseable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PeerConnection.class);
+
     private final int peerHandle;
     private final ConcurrentMap<Integer, DataChannelState> channels;
     private final ConcurrentMap<Integer, Track> tracks;
+    private final Cleaner.Cleanable cleanable;
     final PeerConnectionListener listener;
 
     private PeerConnection(int peerHandle) {
@@ -28,11 +36,16 @@ public class PeerConnection implements AutoCloseable {
         this.channels = new ConcurrentHashMap<>();
         this.tracks = new ConcurrentHashMap<>();
         this.listener = new PeerConnectionListener(this);
-
-        LibDataChannel.CLEANER.register(this, () -> {
+        this.cleanable = LibDataChannel.CLEANER.register(this, () -> {
             // make sure not to capture this here, that would be a memory leak
-            rtcClosePeerConnection(peerHandle);
-            rtcDeletePeerConnection(peerHandle);
+            final int closeResult = rtcClosePeerConnection(peerHandle);
+            if (closeResult != ERR_SUCCESS) {
+                LOGGER.info("Failed close PeerConnection: {}", closeResult);
+            }
+            final int deleteResult = rtcDeletePeerConnection(peerHandle);
+            if (deleteResult != ERR_SUCCESS) {
+                LOGGER.info("Failed delete PeerConnection: {}", closeResult);
+            }
         });
     }
 
@@ -110,8 +123,7 @@ public class PeerConnection implements AutoCloseable {
     @Override
     public void close() {
         closeChannels();
-        wrapError("rtcClosePeerConnection", rtcClosePeerConnection(peerHandle));
-        wrapError("rtcDeletePeerConnection", rtcDeletePeerConnection(peerHandle));
+        cleanable.clean();
     }
 
     /**
