@@ -1,5 +1,20 @@
 package tel.schich.libdatachannel;
 
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcClose;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcDeleteDataChannel;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetAvailableAmount;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetBufferedAmount;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetDataChannelLabel;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetDataChannelProtocol;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetDataChannelReliability;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetDataChannelStream;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcIsClosed;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcIsOpen;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcMaxMessageSize;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcReceiveMessage;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcReceiveMessageInto;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSendMessage;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetBufferedAmountLowThreshold;
 import static tel.schich.libdatachannel.Util.ensureDirect;
 import static tel.schich.libdatachannel.Util.wrapError;
 
@@ -123,7 +138,7 @@ public class DataChannel implements AutoCloseable {
     }
 
     private void sendMessage(ByteBuffer data, int offset, int length) {
-        wrapError("sendMessage", LibDataChannelNative.rtcSendMessage(channelHandle, data, offset, length));
+        wrapError("sendMessage", rtcSendMessage(channelHandle, data, offset, length));
     }
 
     /**
@@ -159,8 +174,8 @@ public class DataChannel implements AutoCloseable {
      */
     @Override
     public void close() {
-        wrapError("rtcClose", LibDataChannelNative.rtcClose(channelHandle));
-        wrapError("rtcDeleteDataChannel", LibDataChannelNative.rtcDeleteDataChannel(channelHandle));
+        wrapError("rtcClose", rtcClose(channelHandle));
+        wrapError("rtcDeleteDataChannel", rtcDeleteDataChannel(channelHandle));
         peer.dropChannelState(channelHandle);
     }
 
@@ -170,7 +185,7 @@ public class DataChannel implements AutoCloseable {
      * @return true if closed
      */
     public boolean isClosed() {
-        return LibDataChannelNative.rtcIsClosed(channelHandle);
+        return rtcIsClosed(channelHandle);
     }
 
     /**
@@ -179,7 +194,7 @@ public class DataChannel implements AutoCloseable {
      * @return true if open
      */
     public boolean isOpen() {
-        return LibDataChannelNative.rtcIsOpen(channelHandle);
+        return rtcIsOpen(channelHandle);
     }
 
     /**
@@ -188,7 +203,7 @@ public class DataChannel implements AutoCloseable {
      * @return the maximum message size
      */
     public int maxMessageSize() {
-        return wrapError("rtcMaxMessageSize", LibDataChannelNative.rtcMaxMessageSize(channelHandle));
+        return wrapError("rtcMaxMessageSize", rtcMaxMessageSize(channelHandle));
     }
 
     /**
@@ -203,7 +218,7 @@ public class DataChannel implements AutoCloseable {
      * @param amount the amount
      */
     public void bufferedAmountLowThreshold(int amount) {
-        wrapError("rtcSetBufferedAmountLowThreshold", LibDataChannelNative.rtcSetBufferedAmountLowThreshold(channelHandle, amount));
+        wrapError("rtcSetBufferedAmountLowThreshold", rtcSetBufferedAmountLowThreshold(channelHandle, amount));
     }
 
     /**
@@ -215,7 +230,7 @@ public class DataChannel implements AutoCloseable {
      * @return the received message
      */
     public Optional<ByteBuffer> receiveMessage() {
-        return Optional.of(LibDataChannelNative.rtcReceiveMessage(channelHandle));
+        return Optional.of(rtcReceiveMessage(channelHandle));
     }
 
     /**
@@ -228,7 +243,7 @@ public class DataChannel implements AutoCloseable {
      */
     public int receiveMessage(ByteBuffer buffer) {
         ensureDirect(buffer);
-        return LibDataChannelNative.rtcReceiveMessageInto(channelHandle, buffer, buffer.position(), buffer.remaining());
+        return rtcReceiveMessageInto(channelHandle, buffer, buffer.position(), buffer.remaining());
     }
 
     /**
@@ -240,7 +255,7 @@ public class DataChannel implements AutoCloseable {
      * @return the available amount
      */
     public int availableAmount() {
-        return wrapError("rtcGetAvailableAmount", LibDataChannelNative.rtcGetAvailableAmount(channelHandle));
+        return wrapError("rtcGetAvailableAmount", rtcGetAvailableAmount(channelHandle));
     }
 
     /**
@@ -252,7 +267,7 @@ public class DataChannel implements AutoCloseable {
      * @return the buffered amount
      */
     public int bufferedAmount() {
-        return wrapError("rtcGetBufferedAmount", LibDataChannelNative.rtcGetBufferedAmount(channelHandle));
+        return wrapError("rtcGetBufferedAmount", rtcGetBufferedAmount(channelHandle));
     }
 
     /**
@@ -261,7 +276,7 @@ public class DataChannel implements AutoCloseable {
      * @return the stream id
      */
     public int streamId() {
-        return wrapError("rtcGetDataChannelStream", LibDataChannelNative.rtcGetDataChannelStream(channelHandle));
+        return wrapError("rtcGetDataChannelStream", rtcGetDataChannelStream(channelHandle));
     }
 
     /**
@@ -270,7 +285,7 @@ public class DataChannel implements AutoCloseable {
      * @return the label
      */
     public String label() {
-        return LibDataChannelNative.rtcGetDataChannelLabel(channelHandle);
+        return rtcGetDataChannelLabel(channelHandle);
     }
 
     /**
@@ -279,7 +294,7 @@ public class DataChannel implements AutoCloseable {
      * @return the protocol
      */
     public String protocol() {
-        return LibDataChannelNative.rtcGetDataChannelProtocol(channelHandle);
+        return rtcGetDataChannelProtocol(channelHandle);
     }
 
     /**
@@ -288,7 +303,7 @@ public class DataChannel implements AutoCloseable {
      * @return the reliability
      */
     public DataChannelReliability reliability() {
-        return LibDataChannelNative.rtcGetDataChannelReliability(channelHandle);
+        return rtcGetDataChannelReliability(channelHandle);
     }
 
     @Override

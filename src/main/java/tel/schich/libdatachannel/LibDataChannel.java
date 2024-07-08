@@ -4,7 +4,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import tel.schich.jniaccess.JNIAccess;
 
+import java.lang.ref.Cleaner;
+
 public class LibDataChannel {
+    static final Cleaner CLEANER = Cleaner.create();
     private static final Logger LOGGER = LoggerFactory.getLogger(LibDataChannel.class);
     private static volatile boolean initialized = false;
 

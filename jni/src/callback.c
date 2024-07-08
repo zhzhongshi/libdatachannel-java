@@ -3,7 +3,6 @@
 #include "global_jvm.h"
 #include <malloc.h>
 
-
 struct jvm_callback* allocate_callback(JNIEnv* env, jobject callback) {
     struct jvm_callback* cb = malloc(sizeof(struct jvm_callback));
     if (cb == NULL) {

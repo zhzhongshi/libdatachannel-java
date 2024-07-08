@@ -1,5 +1,8 @@
 package tel.schich.libdatachannel;
 
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcClosePeerConnection;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcDeletePeerConnection;
+import static tel.schich.libdatachannel.LibDataChannelNative.setupPeerConnectionListener;
 import static tel.schich.libdatachannel.Util.parseAddress;
 import static tel.schich.libdatachannel.Util.wrapError;
 
@@ -25,6 +28,12 @@ public class PeerConnection implements AutoCloseable {
         this.channels = new ConcurrentHashMap<>();
         this.tracks = new ConcurrentHashMap<>();
         this.listener = new PeerConnectionListener(this);
+
+        LibDataChannel.CLEANER.register(this, () -> {
+            // make sure not to capture this here, that would be a memory leak
+            rtcClosePeerConnection(peerHandle);
+            rtcDeletePeerConnection(peerHandle);
+        });
     }
 
     private static byte[] iceUrisToCStrings(Collection<URI> uris) {
@@ -72,7 +81,7 @@ public class PeerConnection implements AutoCloseable {
                 config.maxMessageSize);
 
         final PeerConnection peer = new PeerConnection(wrapError("rtcCreatePeerConnection", result));
-        LibDataChannelNative.setupPeerConnectionListener(peer.peerHandle, peer.listener);
+        setupPeerConnectionListener(peer.peerHandle, peer.listener);
 
         return peer;
     }
@@ -101,8 +110,8 @@ public class PeerConnection implements AutoCloseable {
     @Override
     public void close() {
         closeChannels();
-        wrapError("rtcClosePeerConnection", LibDataChannelNative.rtcClosePeerConnection(peerHandle));
-        wrapError("rtcDeletePeerConnection", LibDataChannelNative.rtcDeletePeerConnection(peerHandle));
+        wrapError("rtcClosePeerConnection", rtcClosePeerConnection(peerHandle));
+        wrapError("rtcDeletePeerConnection", rtcDeletePeerConnection(peerHandle));
     }
 
     /**

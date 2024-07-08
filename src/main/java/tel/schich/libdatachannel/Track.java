@@ -1,5 +1,10 @@
 package tel.schich.libdatachannel;
 
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcDeleteTrack;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetTrackDescription;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetTrackDirection;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetTrackMid;
+import static tel.schich.libdatachannel.Util.mappedEnum;
 import static tel.schich.libdatachannel.Util.wrapError;
 
 import java.util.Map;
@@ -25,22 +30,22 @@ public class Track implements AutoCloseable {
     // After this function has been called, tr must not be used in a function call anymore. This function will block until all scheduled callbacks
     // of tr return (except the one this function might be called in) and no other callback will be called for tr after it returns.
     public String description() {
-        return LibDataChannelNative.rtcGetTrackDescription(trackHandle);
+        return rtcGetTrackDescription(trackHandle);
     }
 
     // Retrieves the mid (media indentifier) of a Track.
     public String mediaId() {
-        return LibDataChannelNative.rtcGetTrackMid(trackHandle);
+        return rtcGetTrackMid(trackHandle);
     }
 
     // Retrieves the direction of a Track.
     public Direction direction() {
-        return Direction.of(LibDataChannelNative.rtcGetTrackDirection(trackHandle));
+        return Direction.of(rtcGetTrackDirection(trackHandle));
     }
 
     @Override
     public void close() {
-        wrapError("rtcDeleteTrack", LibDataChannelNative.rtcDeleteTrack(trackHandle));
+        wrapError("rtcDeleteTrack", rtcDeleteTrack(trackHandle));
         peer.dropTrackState(trackHandle);
     }
 
@@ -67,7 +72,7 @@ public class Track implements AutoCloseable {
 
         public static final Direction DEFAULT = RTC_DIRECTION_UNKNOWN;
 
-        private static final Map<Integer, Direction> MAP = Util.mappedEnum(Direction.values(), s -> s.direction);
+        private static final Map<Integer, Direction> MAP = mappedEnum(Direction.values(), s -> s.direction);
         final int direction;
 
         Direction(int direction) {
@@ -93,7 +98,7 @@ public class Track implements AutoCloseable {
 
         public static final Codec DEFAULT = RTC_CODEC_H264;
 
-        private static final Map<Integer, Codec> MAP = Util.mappedEnum(Codec.values(), s -> s.codec);
+        private static final Map<Integer, Codec> MAP = mappedEnum(Codec.values(), s -> s.codec);
         final int codec;
 
         Codec(int codec) {
