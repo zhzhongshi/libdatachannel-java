@@ -9,36 +9,44 @@
 void RTC_API handle_local_description(int pc, const char *sdp, const char *type, void *ptr) {
     DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onLocalDescription_cstr, sdp, type);
 }
+SET_CALLBACK_INTERFACE_IMPL(rtcSetLocalDescriptionCallback, handle_local_description)
 
 void RTC_API handle_local_candidate(int pc, const char *candidate, const char *mediaId, void *ptr) {
     DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onLocalCandidate_cstr, candidate, mediaId);
 }
+SET_CALLBACK_INTERFACE_IMPL(rtcSetLocalCandidateCallback, handle_local_candidate)
 
 void RTC_API handle_state_change(int pc, rtcState state, void *ptr) {
     DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onStateChange, state);
 }
+SET_CALLBACK_INTERFACE_IMPL(rtcSetStateChangeCallback, handle_state_change)
 
 void RTC_API handle_ice_state_change(int pc, rtcIceState state, void *ptr) {
     DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onIceStateChange, state);
 }
+SET_CALLBACK_INTERFACE_IMPL(rtcSetIceStateChangeCallback, handle_ice_state_change)
 
 void RTC_API handle_gathering_state_change(int pc, rtcGatheringState state, void *ptr) {
     DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onGatheringStateChange, state);
 }
+SET_CALLBACK_INTERFACE_IMPL(rtcSetGatheringStateChangeCallback, handle_gathering_state_change)
 
 void RTC_API handle_signaling_state_change(int pc, rtcSignalingState state, void *ptr) {
     DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onGatheringStateChange, state);
 }
+SET_CALLBACK_INTERFACE_IMPL(rtcSetSignalingStateChangeCallback, handle_signaling_state_change)
 
 void RTC_API handle_data_channel(int pc, int channelHandle, void *ptr) {
     rtcSetUserPointer(channelHandle, ptr);
     DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onDataChannel, channelHandle);
 }
+SET_CALLBACK_INTERFACE_IMPL(rtcSetDataChannelCallback, handle_data_channel)
 
 void RTC_API handle_track(int pc, int trackHandle, void *ptr) {
     rtcSetUserPointer(trackHandle, ptr);
     DISPATCH_JNI(call_tel_schich_libdatachannel_PeerConnectionListener_onTrack, trackHandle);
 }
+SET_CALLBACK_INTERFACE_IMPL(rtcSetTrackCallback, handle_track)
 
 JNIEXPORT jint JNICALL
 Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreatePeerConnection(JNIEnv *env, jclass clazz,
@@ -212,13 +220,7 @@ JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_setup
         return EXCEPTION_THROWN;
     }
     rtcSetUserPointer(peerHandle, jvm_callback);
-    SETUP_HANDLER(peerHandle, rtcSetLocalDescriptionCallback, handle_local_description);
-    SETUP_HANDLER(peerHandle, rtcSetLocalCandidateCallback, handle_local_candidate);
-    SETUP_HANDLER(peerHandle, rtcSetStateChangeCallback, handle_state_change);
-    SETUP_HANDLER(peerHandle, rtcSetIceStateChangeCallback, handle_ice_state_change);
-    SETUP_HANDLER(peerHandle, rtcSetGatheringStateChangeCallback, handle_gathering_state_change);
-    SETUP_HANDLER(peerHandle, rtcSetSignalingStateChangeCallback, handle_signaling_state_change);
-    SETUP_HANDLER(peerHandle, rtcSetDataChannelCallback, handle_data_channel);
-    SETUP_HANDLER(peerHandle, rtcSetTrackCallback, handle_track);
+
+    return RTC_ERR_SUCCESS;
     return RTC_ERR_SUCCESS;
 }

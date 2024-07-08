@@ -31,7 +31,7 @@ import java.util.Optional;
 public class DataChannel implements AutoCloseable {
 
     private final PeerConnection peer;
-    private final int channelHandle;
+    final int channelHandle;
 
     DataChannel(final PeerConnection peer, final int channelHandle) {
         this.peer = peer;

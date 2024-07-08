@@ -8,6 +8,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetAvailableCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetBufferedAmountLowCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetClosedCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetDataChannelCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetErrorCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetGatheringStateChangeCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetIceStateChangeCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetLocalCandidateCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetLocalDescriptionCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetMessageCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetOpenCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetSignalingStateChangeCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetStateChangeCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetTrackCallback;
+
 class PeerConnectionListener {
     private final PeerConnection peer;
     private final List<PeerConnectionCallback.LocalDescription> localDescription = new CopyOnWriteArrayList<>();
@@ -24,34 +39,42 @@ class PeerConnectionListener {
     }
 
     void registerHandler(PeerConnectionCallback.LocalDescription handler) {
+        rtcSetLocalDescriptionCallback(peer.peerHandle);
         localDescription.add(handler);
     }
 
     void registerHandler(PeerConnectionCallback.LocalCandidate handler) {
+        rtcSetLocalCandidateCallback(peer.peerHandle);
         localCandidate.add(handler);
     }
 
     void registerHandler(PeerConnectionCallback.StateChange handler) {
+        rtcSetStateChangeCallback(peer.peerHandle);
         stateChange.add(handler);
     }
 
     void registerHandler(PeerConnectionCallback.IceStateChange handler) {
+        rtcSetIceStateChangeCallback(peer.peerHandle);
         iceStateChange.add(handler);
     }
 
     void registerHandler(PeerConnectionCallback.GatheringStateChange handler) {
+        rtcSetGatheringStateChangeCallback(peer.peerHandle);
         gatheringStateChange.add(handler);
     }
 
     void registerHandler(PeerConnectionCallback.SignalingStateChange handler) {
+        rtcSetSignalingStateChangeCallback(peer.peerHandle);
         signalingStateChange.add(handler);
     }
 
     void registerHandler(PeerConnectionCallback.DataChannel handler) {
+        rtcSetDataChannelCallback(peer.peerHandle);
         dataChannel.add(handler);
     }
 
     void registerHandler(PeerConnectionCallback.Track handler) {
+        rtcSetTrackCallback(peer.peerHandle);
         track.add(handler);
     }
 

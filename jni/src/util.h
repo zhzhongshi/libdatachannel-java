@@ -25,11 +25,15 @@ void throw_native_exception(JNIEnv *env, char *msg);
 
 #define DISPATCH_JNI(target, args...) \
     struct jvm_callback* cb = ptr; \
-    JNIEnv* env = get_jni_env();      \
-    if (env == NULL) return;\
+    JNIEnv* env = get_jni_env(); \
+    if (env == NULL) return; \
     target(env, cb->instance, args)
 
 #define SETUP_HANDLER(peer, api, target) \
     if (WRAP_ERROR(env, api(peer, target)) == EXCEPTION_THROWN) return EXCEPTION_THROWN
 
+#define SET_CALLBACK_INTERFACE_IMPL(api, target) \
+JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_##api(JNIEnv *env, jclass clazz, jint handle) { \
+    return api(handle, target); \
+}
 #endif //LIBDATACHANNEL_JNI_UTIL_H

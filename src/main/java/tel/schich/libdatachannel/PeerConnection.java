@@ -42,7 +42,7 @@ import java.util.concurrent.ConcurrentMap;
 public class PeerConnection implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(PeerConnection.class);
 
-    private final int peerHandle;
+    final int peerHandle;
     private final ConcurrentMap<Integer, DataChannelState> channels;
     private final ConcurrentMap<Integer, Track> tracks;
     private final Cleaner.Cleanable cleanable;
