@@ -112,7 +112,8 @@ public class Main {
         while (true) {
             try (var offer = Offer.create("test", cfg).join()) {
                 offer.channel.onOpen(Main::handleOpen);
-                offer.channel.onMessage(Main::handleMessage);
+                offer.channel.onMessage(Main::handleTextMessage);
+                offer.channel.onMessage(Main::handleByteBuffer);
                 offer.channel.onError(Main::handleError);
                 offer.channel.peer().onStateChange(Main::handleStateChange);
                 final var encoded = Base64.getEncoder().encodeToString(offer.sdp.getBytes());
@@ -150,7 +151,18 @@ public class Main {
         System.out.println("Error: " + error);
     }
 
-    private static void handleMessage(final DataChannel c, ByteBuffer data) {
+    private static void handleTextMessage(DataChannel channel, String text) {
+        System.out.println("In: " + text);
+        if (text.equals("exit")) {
+            channel.sendMessage("Bye!");
+            System.out.println("Ok we are done");
+            channel.close();
+        } else {
+            channel.sendMessage("You said things...");
+        }
+    }
+
+    private static void handleByteBuffer(final DataChannel c, ByteBuffer data) {
         c.sendMessage("What is this file?");
         System.out.println("Got a file if size: " + data.remaining());
     }
