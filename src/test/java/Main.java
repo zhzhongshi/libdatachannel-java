@@ -52,16 +52,10 @@ public class Main {
         private DataChannel channel;
         private String sdp;
 
-        public Offer init(DataChannel channel) {
+        public Offer(DataChannel channel, String sdp) {
             this.channel = channel;
-            return this;
-        }
-
-        public Offer init( String sdp) {
             this.sdp = sdp;
-            return this;
         }
-
 
         public void answer(String remoteSdp) {
             channel.peer().setAnswer(remoteSdp);
@@ -86,17 +80,15 @@ public class Main {
 
         public static CompletableFuture<Offer> create(String label, PeerConnectionConfiguration cfg) {
             var peer = PeerConnection.createPeer(cfg);
-            final var futureOffer = new CompletableFuture<Offer>();
-            final var offer = new Offer();
+            final var futureOffer = new CompletableFuture<String>();
             peer.onGatheringStateChange((pc, state) -> {
                 System.out.println("State Change: " + state);
                 if (state == RTC_GATHERING_COMPLETE) {
-                    futureOffer.complete(offer.init(peer.localDescription()));
+                    futureOffer.complete(peer.localDescription());
                 }
             });
             final var channel = peer.createDataChannel(label);
-            offer.init(channel);
-            return futureOffer;
+            return futureOffer.thenApply(sdp -> new Offer(channel, sdp));
         }
 
         @Override
