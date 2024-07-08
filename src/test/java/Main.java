@@ -49,13 +49,19 @@ public class Main {
     }
 
     public static class Offer implements AutoCloseable {
-        private final DataChannel channel;
-        private final String sdp;
+        private DataChannel channel;
+        private String sdp;
 
-        public Offer(DataChannel channel, String sdp) {
+        public Offer init(DataChannel channel) {
             this.channel = channel;
-            this.sdp = sdp;
+            return this;
         }
+
+        public Offer init( String sdp) {
+            this.sdp = sdp;
+            return this;
+        }
+
 
         public void answer(String remoteSdp) {
             channel.peer().setAnswer(remoteSdp);
@@ -80,15 +86,17 @@ public class Main {
 
         public static CompletableFuture<Offer> create(String label, PeerConnectionConfiguration cfg) {
             var peer = PeerConnection.createPeer(cfg);
-            final var offer = new CompletableFuture<Offer>();
-            final var channel = peer.createDataChannel(label);
+            final var futureOffer = new CompletableFuture<Offer>();
+            final var offer = new Offer();
             peer.onGatheringStateChange((pc, state) -> {
-                System.out.println(state);
+                System.out.println("State Change: " + state);
                 if (state == RTC_GATHERING_COMPLETE) {
-                    offer.complete(new Offer(channel, peer.localDescription()));
+                    futureOffer.complete(offer.init(peer.localDescription()));
                 }
             });
-            return offer;
+            final var channel = peer.createDataChannel(label);
+            offer.init(channel);
+            return futureOffer;
         }
 
         @Override
