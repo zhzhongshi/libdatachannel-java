@@ -73,20 +73,23 @@ Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreateDataChannelEx(JNIEn
         init.protocol = (*env)->GetStringUTFChars(env, protocol, NULL);
     }
 
-    jint result = WRAP_ERROR(env, rtcCreateDataChannelEx(peerHandle, c_label, &init));
-    rtcSetUserPointer(result, rtcGetUserPointer(peerHandle));
-    SETUP_HANDLER(result, rtcSetOpenCallback, handle_channel_open);
-    SETUP_HANDLER(result, rtcSetClosedCallback, handle_channel_closed);
-    SETUP_HANDLER(result, rtcSetErrorCallback, handle_channel_error);
-    SETUP_HANDLER(result, rtcSetMessageCallback, handle_channel_message);
-    SETUP_HANDLER(result, rtcSetBufferedAmountLowCallback, handle_channel_buffered_amount_low);
-    SETUP_HANDLER(result, rtcSetAvailableCallback, handle_channel_available);
+    jint result = rtcCreateDataChannelEx(peerHandle, c_label, &init);
 
     if (c_label != NULL) {
         (*env)->ReleaseStringUTFChars(env, label, c_label);
     }
     if (init.protocol != NULL) {
         (*env)->ReleaseStringUTFChars(env, protocol, init.protocol);
+    }
+
+    if (result == RTC_ERR_SUCCESS) {
+        rtcSetUserPointer(result, rtcGetUserPointer(peerHandle));
+        SETUP_HANDLER(result, rtcSetOpenCallback, handle_channel_open);
+        SETUP_HANDLER(result, rtcSetClosedCallback, handle_channel_closed);
+        SETUP_HANDLER(result, rtcSetErrorCallback, handle_channel_error);
+        SETUP_HANDLER(result, rtcSetMessageCallback, handle_channel_message);
+        SETUP_HANDLER(result, rtcSetBufferedAmountLowCallback, handle_channel_buffered_amount_low);
+        SETUP_HANDLER(result, rtcSetAvailableCallback, handle_channel_available);
     }
 
     return result;

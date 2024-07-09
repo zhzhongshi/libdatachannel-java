@@ -220,4 +220,5 @@ JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_setup
     SETUP_HANDLER(peerHandle, rtcSetSignalingStateChangeCallback, handle_signaling_state_change);
     SETUP_HANDLER(peerHandle, rtcSetDataChannelCallback, handle_data_channel);
     SETUP_HANDLER(peerHandle, rtcSetTrackCallback, handle_track);
+    return RTC_ERR_SUCCESS;
 }
