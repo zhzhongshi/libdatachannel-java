@@ -41,8 +41,8 @@ public class Track implements AutoCloseable {
 
     @Override
     public void close() {
-        wrapError("rtcDeleteTrack", rtcDeleteTrack(trackHandle));
         peer.dropTrackState(trackHandle);
+        wrapError("rtcDeleteTrack", rtcDeleteTrack(trackHandle));
     }
 
     @Override

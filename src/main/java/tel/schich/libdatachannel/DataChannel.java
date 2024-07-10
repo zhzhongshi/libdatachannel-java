@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import tel.schich.libdatachannel.exception.LibDataChannelException;
+
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcClose;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcDeleteDataChannel;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetAvailableAmount;
@@ -174,9 +176,27 @@ public class DataChannel implements AutoCloseable {
      */
     @Override
     public void close() {
-        wrapError("rtcClose", rtcClose(channelHandle));
-        wrapError("rtcDeleteDataChannel", rtcDeleteDataChannel(channelHandle));
         peer.dropChannelState(channelHandle);
+
+        LibDataChannelException closeError = null;
+        try {
+            wrapError("rtcClose", rtcClose(channelHandle));
+        } catch (LibDataChannelException e) {
+            closeError = e;
+        }
+
+        try {
+            wrapError("rtcDeleteDataChannel", rtcDeleteDataChannel(channelHandle));
+        } catch (LibDataChannelException t) {
+            if (closeError != null) {
+                t.addSuppressed(t);
+            }
+            throw t;
+        }
+
+        if (closeError != null) {
+            throw closeError;
+        }
     }
 
     /**
