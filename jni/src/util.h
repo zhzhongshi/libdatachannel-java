@@ -33,7 +33,7 @@ void throw_native_exception(JNIEnv *env, char *msg);
     if (WRAP_ERROR(env, api(peer, target)) == EXCEPTION_THROWN) return EXCEPTION_THROWN
 
 #define SET_CALLBACK_INTERFACE_IMPL(api, target) \
-JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_##api(JNIEnv *env, jclass clazz, jint handle) { \
-    return api(handle, target); \
+JNIEXPORT jint JNICALL Java_tel_schich_libdatachannel_LibDataChannelNative_##api(JNIEnv *env, jclass clazz, jint handle, jboolean set) { \
+    return api(handle, set ? target : NULL); \
 }
 #endif //LIBDATACHANNEL_JNI_UTIL_H

@@ -1,13 +1,11 @@
 package tel.schich.libdatachannel;
 
-import org.w3c.dom.Text;
-
 import java.nio.ByteBuffer;
 
 /**
  * Callback interfaces for {@link DataChannel}
  */
-interface DataChannelCallback {
+public interface DataChannelCallback {
 
     /**
      * Called when the channel was previously connecting and is now open.
@@ -24,7 +22,7 @@ interface DataChannelCallback {
     @FunctionalInterface
     interface Closed {
 
-        void onClose(DataChannel channel);
+        void onClosed(DataChannel channel);
     }
 
     /**
@@ -43,6 +41,32 @@ interface DataChannelCallback {
      * </p>
      */
     interface Message extends TextMessage, BinaryMessage {
+        static Message handleText(TextMessage handler) {
+            return new DataChannelCallback.Message() {
+                @Override
+                public void onText(DataChannel channel, String text) {
+                    handler.onText(channel, text);
+                }
+
+                @Override
+                public void onBinary(DataChannel channel, ByteBuffer buffer) {
+                }
+            };
+        }
+
+        static Message handleBinary(BinaryMessage handler) {
+            return new DataChannelCallback.Message() {
+                @Override
+                public void onText(DataChannel channel, String text) {
+
+                }
+
+                @Override
+                public void onBinary(DataChannel channel, ByteBuffer buffer) {
+                    handler.onBinary(channel, buffer);
+                }
+            };
+        }
     }
 
     /**

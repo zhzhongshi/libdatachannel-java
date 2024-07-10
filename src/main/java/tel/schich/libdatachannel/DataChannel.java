@@ -16,7 +16,13 @@ import static tel.schich.libdatachannel.LibDataChannelNative.rtcMaxMessageSize;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcReceiveMessage;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcReceiveMessageInto;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcSendMessage;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetAvailableCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetBufferedAmountLowCallback;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetBufferedAmountLowThreshold;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetClosedCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetErrorCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetMessageCallback;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetOpenCallback;
 import static tel.schich.libdatachannel.Util.ensureDirect;
 import static tel.schich.libdatachannel.Util.wrapError;
 
@@ -33,9 +39,23 @@ public class DataChannel implements AutoCloseable {
     private final PeerConnection peer;
     final int channelHandle;
 
+    public final EventListenerContainer<DataChannelCallback.Open> onOpen;
+    public final EventListenerContainer<DataChannelCallback.Closed> onClosed;
+    public final EventListenerContainer<DataChannelCallback.Error> onError;
+    public final EventListenerContainer<DataChannelCallback.Message> onMessage;
+    public final EventListenerContainer<DataChannelCallback.BufferedAmountLow> onBufferedAmountLow;
+    public final EventListenerContainer<DataChannelCallback.Available> onAvailable;
+
     DataChannel(final PeerConnection peer, final int channelHandle) {
         this.peer = peer;
         this.channelHandle = channelHandle;
+
+        this.onOpen = new EventListenerContainer<>(set -> rtcSetOpenCallback(channelHandle, set));
+        this.onClosed = new EventListenerContainer<>(set -> rtcSetClosedCallback(channelHandle, set));
+        this.onError = new EventListenerContainer<>(set -> rtcSetErrorCallback(channelHandle, set));
+        this.onMessage = new EventListenerContainer<>(set -> rtcSetMessageCallback(channelHandle, set));
+        this.onBufferedAmountLow = new EventListenerContainer<>(set -> rtcSetBufferedAmountLowCallback(channelHandle, set));
+        this.onAvailable = new EventListenerContainer<>(set -> rtcSetAvailableCallback(channelHandle, set));
     }
 
     /**
@@ -45,98 +65,6 @@ public class DataChannel implements AutoCloseable {
      */
     public PeerConnection peer() {
         return peer;
-    }
-
-    /**
-     * Registers a {@link DataChannelCallback.Open}
-     *
-     * @param cb the callback or null to remove it
-     */
-    public void onOpen(DataChannelCallback.Open cb) {
-        peer.listener.registerHandler(channelHandle, cb);
-    }
-
-    /**
-     * Registers a {@link DataChannelCallback.Closed}
-     *
-     * @param cb the callback or null to remove it
-     */
-    public void onClose(DataChannelCallback.Closed cb) {
-        peer.listener.registerHandler(channelHandle, cb);
-    }
-
-    /**
-     * Registers a {@link DataChannelCallback.Error}
-     *
-     * @param cb the callback or null to remove it
-     */
-    public void onError(DataChannelCallback.Error cb) {
-        peer.listener.registerHandler(channelHandle, cb);
-    }
-
-    /**
-     * Registers a {@link DataChannelCallback.Message}
-     *
-     * @param cb the callback or null to remove it
-     */
-    public void onMessage(DataChannelCallback.Message cb) {
-        peer.listener.registerHandler(channelHandle, cb);
-    }
-
-    /**
-     * Registers a {@link DataChannelCallback.Message}
-     *
-     * @param cb the callback or null to remove it
-     */
-    public void onMessage(DataChannelCallback.TextMessage cb) {
-        peer.listener.registerHandler(channelHandle, new DataChannelCallback.Message() {
-            @Override
-            public void onText(DataChannel channel, String text) {
-                cb.onText(channel, text);
-            }
-
-            @Override
-            public void onBinary(DataChannel channel, ByteBuffer buffer) {
-
-            }
-        });
-    }
-
-    /**
-     * Registers a {@link DataChannelCallback.Message}
-     *
-     * @param cb the callback or null to remove it
-     */
-    public void onMessage(DataChannelCallback.BinaryMessage cb) {
-        peer.listener.registerHandler(channelHandle, new DataChannelCallback.Message() {
-            @Override
-            public void onText(DataChannel channel, String text) {
-
-            }
-
-            @Override
-            public void onBinary(DataChannel channel, ByteBuffer buffer) {
-                onBinary(channel, buffer);
-            }
-        });
-    }
-
-    /**
-     * Registers a {@link DataChannelCallback.BufferedAmountLow}
-     *
-     * @param cb the callback or null to remove it
-     */
-    public void onBufferedAmountLow(DataChannelCallback.BufferedAmountLow cb) {
-        peer.listener.registerHandler(channelHandle, cb);
-    }
-
-    /**
-     * Registers a {@link DataChannelCallback.Available}
-     *
-     * @param cb the callback or null to remove it
-     */
-    public void onAvailable(DataChannelCallback.Available cb) {
-        peer.listener.registerHandler(channelHandle, cb);
     }
 
     private void sendMessage(ByteBuffer data, int offset, int length) {

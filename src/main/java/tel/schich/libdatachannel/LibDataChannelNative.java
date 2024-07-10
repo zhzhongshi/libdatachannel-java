@@ -22,14 +22,14 @@ class LibDataChannelNative {
     static native String rtcGetLocalAddress(int peerHandle);
     static native String rtcGetRemoteAddress(int peerHandle);
     static native CandidatePair rtcGetSelectedCandidatePair(int peerHandle);
-    static native int rtcSetLocalDescriptionCallback(int peerHandle);
-    static native int rtcSetLocalCandidateCallback(int peerHandle);
-    static native int rtcSetStateChangeCallback(int peerHandle);
-    static native int rtcSetIceStateChangeCallback(int peerHandle);
-    static native int rtcSetGatheringStateChangeCallback(int peerHandle);
-    static native int rtcSetSignalingStateChangeCallback(int peerHandle);
-    static native int rtcSetDataChannelCallback(int peerHandle);
-    static native int rtcSetTrackCallback(int peerHandle);
+    static native int rtcSetLocalDescriptionCallback(int peerHandle, boolean set);
+    static native int rtcSetLocalCandidateCallback(int peerHandle, boolean set);
+    static native int rtcSetStateChangeCallback(int peerHandle, boolean set);
+    static native int rtcSetIceStateChangeCallback(int peerHandle, boolean set);
+    static native int rtcSetGatheringStateChangeCallback(int peerHandle, boolean set);
+    static native int rtcSetSignalingStateChangeCallback(int peerHandle, boolean set);
+    static native int rtcSetDataChannelCallback(int peerHandle, boolean set);
+    static native int rtcSetTrackCallback(int peerHandle, boolean set);
 
     static native int rtcAddTrack(int peerHandle, String sdp);
     static native int rtcAddTrackEx(int peerHandle, int direction, int codec);
@@ -56,10 +56,10 @@ class LibDataChannelNative {
     static native String rtcGetDataChannelLabel(int channelHandle);
     static native String rtcGetDataChannelProtocol(int channelHandle);
     static native DataChannelReliability rtcGetDataChannelReliability(int channelHandle);
-    static native int rtcSetOpenCallback(int channelHandle);
-    static native int rtcSetClosedCallback(int channelHandle);
-    static native int rtcSetErrorCallback(int channelHandle);
-    static native int rtcSetMessageCallback(int channelHandle);
-    static native int rtcSetBufferedAmountLowCallback(int channelHandle);
-    static native int rtcSetAvailableCallback(int channelHandle);
+    static native int rtcSetOpenCallback(int channelHandle, boolean set);
+    static native int rtcSetClosedCallback(int channelHandle, boolean set);
+    static native int rtcSetErrorCallback(int channelHandle, boolean set);
+    static native int rtcSetMessageCallback(int channelHandle, boolean set);
+    static native int rtcSetBufferedAmountLowCallback(int channelHandle, boolean set);
+    static native int rtcSetAvailableCallback(int channelHandle, boolean set);
 }

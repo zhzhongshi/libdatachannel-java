@@ -1,3 +1,5 @@
+import static tel.schich.libdatachannel.DataChannelCallback.Message.handleBinary;
+import static tel.schich.libdatachannel.DataChannelCallback.Message.handleText;
 import static tel.schich.libdatachannel.GatheringState.RTC_GATHERING_COMPLETE;
 import static tel.schich.libdatachannel.PeerConnectionConfiguration.uris;
 
@@ -27,7 +29,7 @@ public class Main {
         // try with resources to cleanup peer when done
         try (var peer = PeerConnection.createPeer(cfg)) {
             // when complete send sdp to remote peer
-            peer.onGatheringStateChange((pc, state) -> {
+            peer.onGatheringStateChange.register((pc, state) -> {
                 if (RTC_GATHERING_COMPLETE == state) {
                     final var sdp = pc.localDescription();
                     System.out.println(sdp);
@@ -39,10 +41,10 @@ public class Main {
             // then set answer from remote peer
             peer.setAnswer(readInput());
             // register message callback (negative size indicates a null-terminated string otherwise binary data)
-            channel.onMessage((DataChannel c, String message) -> System.out.println("Incoming message: " + message));
+            channel.onMessage.register(handleText((DataChannel c, String message) -> System.out.println("Incoming message: " + message)));
             // block until channel is closed
             CompletableFuture<Void> future = new CompletableFuture<>();
-            channel.onClose(c -> future.completeAsync(() -> null));
+            channel.onClosed.register(c -> future.completeAsync(() -> null));
             future.join();
         }
 
@@ -63,8 +65,8 @@ public class Main {
 
         public CompletableFuture<Void> closeFuture() {
             CompletableFuture<Void> future = new CompletableFuture<>();
-            this.channel.onClose(c -> future.completeAsync(() -> null));
-            this.channel.peer().onStateChange((peer, state) -> {
+            this.channel.onClosed.register(c -> future.completeAsync(() -> null));
+            this.channel.peer().onStateChange.register((peer, state) -> {
                 if (state == PeerState.RTC_CLOSED) {
                     peer.close();
                     future.completeAsync(() -> null);
@@ -81,7 +83,7 @@ public class Main {
         public static CompletableFuture<Offer> create(String label, PeerConnectionConfiguration cfg) {
             var peer = PeerConnection.createPeer(cfg);
             final var futureOffer = new CompletableFuture<String>();
-            peer.onGatheringStateChange((pc, state) -> {
+            peer.onGatheringStateChange.register((pc, state) -> {
                 System.out.println("State Change: " + state);
                 if (state == RTC_GATHERING_COMPLETE) {
                     futureOffer.complete(peer.localDescription());
@@ -111,11 +113,11 @@ public class Main {
         final var cfg = PeerConnectionConfiguration.DEFAULT.withIceServers(uris("stun.l.google.com:19302"));
         while (true) {
             try (var offer = Offer.create("test", cfg).join()) {
-                offer.channel.onOpen(Main::handleOpen);
-                offer.channel.onMessage(Main::handleTextMessage);
-                offer.channel.onMessage(Main::handleByteBuffer);
-                offer.channel.onError(Main::handleError);
-                offer.channel.peer().onStateChange(Main::handleStateChange);
+                offer.channel.onOpen.register(Main::handleOpen);
+                offer.channel.onMessage.register(handleText(Main::handleTextMessage));
+                offer.channel.onMessage.register(handleBinary(Main::handleByteBuffer));
+                offer.channel.onError.register(Main::handleError);
+                offer.channel.peer().onStateChange.register(Main::handleStateChange);
                 final var encoded = Base64.getEncoder().encodeToString(offer.sdp.getBytes());
                 System.out.println("SDP:\n\n" + offer.sdp);
                 System.out.println("Awaiting Answer...\n" + WEBSITE + "?sdp=" + encoded);
