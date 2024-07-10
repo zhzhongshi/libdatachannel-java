@@ -50,12 +50,12 @@ public class DataChannel implements AutoCloseable {
         this.peer = peer;
         this.channelHandle = channelHandle;
 
-        this.onOpen = new EventListenerContainer<>(set -> rtcSetOpenCallback(channelHandle, set));
-        this.onClosed = new EventListenerContainer<>(set -> rtcSetClosedCallback(channelHandle, set));
-        this.onError = new EventListenerContainer<>(set -> rtcSetErrorCallback(channelHandle, set));
-        this.onMessage = new EventListenerContainer<>(set -> rtcSetMessageCallback(channelHandle, set));
-        this.onBufferedAmountLow = new EventListenerContainer<>(set -> rtcSetBufferedAmountLowCallback(channelHandle, set));
-        this.onAvailable = new EventListenerContainer<>(set -> rtcSetAvailableCallback(channelHandle, set));
+        this.onOpen = new EventListenerContainer<>("ChannelOpen", set -> rtcSetOpenCallback(channelHandle, set));
+        this.onClosed = new EventListenerContainer<>("ChannelClosed", set -> rtcSetClosedCallback(channelHandle, set));
+        this.onError = new EventListenerContainer<>("ChannelError", set -> rtcSetErrorCallback(channelHandle, set));
+        this.onMessage = new EventListenerContainer<>("ChannelMessage", set -> rtcSetMessageCallback(channelHandle, set));
+        this.onBufferedAmountLow = new EventListenerContainer<>("ChannelBufferedAmountLow", set -> rtcSetBufferedAmountLowCallback(channelHandle, set));
+        this.onAvailable = new EventListenerContainer<>("ChannelAvailable", set -> rtcSetAvailableCallback(channelHandle, set));
     }
 
     /**

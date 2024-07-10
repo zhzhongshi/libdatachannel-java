@@ -71,14 +71,14 @@ public class PeerConnection implements AutoCloseable {
         this.tracks = new ConcurrentHashMap<>();
         this.listener = new PeerConnectionListener(this);
 
-        this.onLocalDescription = new EventListenerContainer<>(set -> rtcSetLocalDescriptionCallback(peerHandle, set));
-        this.onLocalCandidate = new EventListenerContainer<>(set -> rtcSetLocalCandidateCallback(peerHandle, set));
-        this.onStateChange = new EventListenerContainer<>(set -> rtcSetStateChangeCallback(peerHandle, set));
-        this.onIceStateChange = new EventListenerContainer<>(set -> rtcSetIceStateChangeCallback(peerHandle, set));
-        this.onGatheringStateChange = new EventListenerContainer<>(set -> rtcSetGatheringStateChangeCallback(peerHandle, set));
-        this.onSignalingStateChange = new EventListenerContainer<>(set -> rtcSetSignalingStateChangeCallback(peerHandle, set));
-        this.onDataChannel = new EventListenerContainer<>(set -> rtcSetDataChannelCallback(peerHandle, set));
-        this.onTrack = new EventListenerContainer<>(set -> rtcSetTrackCallback(peerHandle, set));
+        this.onLocalDescription = new EventListenerContainer<>("LocalDescription", set -> rtcSetLocalDescriptionCallback(peerHandle, set));
+        this.onLocalCandidate = new EventListenerContainer<>("LocalCandidate", set -> rtcSetLocalCandidateCallback(peerHandle, set));
+        this.onStateChange = new EventListenerContainer<>("StateChange", set -> rtcSetStateChangeCallback(peerHandle, set));
+        this.onIceStateChange = new EventListenerContainer<>("IceStateChange", set -> rtcSetIceStateChangeCallback(peerHandle, set));
+        this.onGatheringStateChange = new EventListenerContainer<>("GatheringStateChange", set -> rtcSetGatheringStateChangeCallback(peerHandle, set));
+        this.onSignalingStateChange = new EventListenerContainer<>("SignalingStateChange", set -> rtcSetSignalingStateChangeCallback(peerHandle, set));
+        this.onDataChannel = new EventListenerContainer<>("DataChannel", set -> rtcSetDataChannelCallback(peerHandle, set));
+        this.onTrack = new EventListenerContainer<>("Track", set -> rtcSetTrackCallback(peerHandle, set));
 
         this.cleanable = LibDataChannel.CLEANER.register(this, () -> {
             // make sure not to capture this here, that would be a memory leak
