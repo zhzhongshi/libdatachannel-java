@@ -2,18 +2,19 @@ package tel.schich.libdatachannel;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 public class EventListenerContainer<T> {
-    private final Consumer<Boolean> onFirstListener;
+    private final Consumer<Boolean> lifecycleCallback;
     private final List<T> listeners;
     private final Lock changeLock;
 
     public EventListenerContainer(Consumer<Boolean> lifecycleCallback) {
-        this.onFirstListener = lifecycleCallback;
-        this.listeners = new ArrayList<>();
+        this.lifecycleCallback = lifecycleCallback;
+        this.listeners = new CopyOnWriteArrayList<>();
         this.changeLock = new ReentrantLock();
     }
 
@@ -24,30 +25,32 @@ public class EventListenerContainer<T> {
     }
 
     public void register(T listener) {
+        boolean wasEmpty;
         changeLock.lock();
-        boolean nowNonEmpty = false;
         try {
-            nowNonEmpty = listeners.isEmpty();
+            wasEmpty = listeners.isEmpty();
             listeners.add(listener);
         } finally {
             changeLock.unlock();
         }
-        if (nowNonEmpty) {
-            onFirstListener.accept(true);
+        if (wasEmpty) {
+            lifecycleCallback.accept(true);
         }
     }
 
     public void deregister(T listener) {
+        boolean isNowEmpty;
         changeLock.lock();
-        boolean nowEmpty = false;
         try {
-            listeners.remove(listener);
-            nowEmpty = listeners.isEmpty();
+            if (!listeners.remove(listener)) {
+                return;
+            }
+            isNowEmpty = listeners.isEmpty();
         } finally {
             changeLock.unlock();
         }
-        if (nowEmpty) {
-            onFirstListener.accept(false);
+        if (isNowEmpty) {
+            lifecycleCallback.accept(false);
         }
     }
 }
