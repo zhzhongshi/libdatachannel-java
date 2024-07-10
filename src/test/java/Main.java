@@ -65,7 +65,9 @@ public class Main {
 
         public CompletableFuture<Void> closeFuture() {
             CompletableFuture<Void> future = new CompletableFuture<>();
-            this.channel.onClosed.register(c -> future.completeAsync(() -> null));
+            this.channel.onClosed.register(c -> {
+                future.completeAsync(() -> null);
+            });
             this.channel.peer().onStateChange.register((peer, state) -> {
                 if (state == PeerState.RTC_CLOSED) {
                     peer.close();
@@ -145,7 +147,7 @@ public class Main {
         System.out.println(state);
         if (state == PeerState.RTC_CONNECTED) {
             final var uri = pc.remoteAddress();
-            System.out.println("Connected to " + uri.getAddress() + ":" + uri.getPort());
+            System.out.println("Connected to " + uri.getAddress().getHostAddress() + ":" + uri.getPort());
         }
     }
 

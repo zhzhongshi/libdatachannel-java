@@ -180,9 +180,9 @@ public class PeerConnection implements AutoCloseable {
         List<DataChannel> channels = new ArrayList<>(this.channels.values());
         this.channels.clear();
         LibDataChannelException exception = null;
-        for (final DataChannel value : channels) {
+        for (final DataChannel ch : channels) {
             try {
-                value.close();
+                ch.close();
             } catch (LibDataChannelException e) {
                 if (exception != null) {
                     e.addSuppressed(exception);
