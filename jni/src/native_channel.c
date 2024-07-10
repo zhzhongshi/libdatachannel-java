@@ -88,7 +88,7 @@ Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreateDataChannelEx(JNIEn
         (*env)->ReleaseStringUTFChars(env, protocol, init.protocol);
     }
 
-    if (result == RTC_ERR_SUCCESS) {
+    if (result >= 0) {
         rtcSetUserPointer(result, rtcGetUserPointer(peerHandle));
     }
 
