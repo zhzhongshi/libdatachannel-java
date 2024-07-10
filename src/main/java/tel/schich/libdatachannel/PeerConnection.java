@@ -3,8 +3,24 @@ package tel.schich.libdatachannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcAddRemoteCandidate;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcAddTrack;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcAddTrackEx;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcClosePeerConnection;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcCreateDataChannelEx;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcCreatePeerConnection;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcDeletePeerConnection;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetLocalAddress;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetLocalDescription;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetLocalDescriptionType;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetMaxDataChannelStream;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetRemoteAddress;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetRemoteDescription;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetRemoteDescriptionType;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetRemoteMaxMessageSize;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetSelectedCandidatePair;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetLocalDescription;
+import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetRemoteDescription;
 import static tel.schich.libdatachannel.LibDataChannelNative.setupPeerConnectionListener;
 import static tel.schich.libdatachannel.Util.parseAddress;
 import static tel.schich.libdatachannel.Util.wrapError;
@@ -78,7 +94,7 @@ public class PeerConnection implements AutoCloseable {
         if (config.bindAddress != null) {
             bindAddress = config.bindAddress.toString();
         }
-        int result = LibDataChannelNative.rtcCreatePeerConnection(
+        int result = rtcCreatePeerConnection(
                 iceUrisToCStrings(config.iceServers),
                 proxyServer,
                 bindAddress,
@@ -158,7 +174,7 @@ public class PeerConnection implements AutoCloseable {
      * @param type (optional): type of the description ("offer", "answer", "pranswer", or "rollback") or NULL for autodetection.
      */
     public void setLocalDescription(String type) {
-        wrapError("rtcSetLocalDescription", LibDataChannelNative.rtcSetLocalDescription(peerHandle, type));
+        wrapError("rtcSetLocalDescription", rtcSetLocalDescription(peerHandle, type));
     }
 
     /**
@@ -167,7 +183,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the current local description
      */
     public String localDescription() {
-        return LibDataChannelNative.rtcGetLocalDescription(peerHandle);
+        return rtcGetLocalDescription(peerHandle);
     }
 
     /**
@@ -176,7 +192,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the current local description type
      */
     public String localDescriptionType() {
-        return LibDataChannelNative.rtcGetLocalDescriptionType(peerHandle);
+        return rtcGetLocalDescriptionType(peerHandle);
     }
 
     /**
@@ -189,7 +205,7 @@ public class PeerConnection implements AutoCloseable {
      * @param type (optional): type of the description ("offer", "answer", "pranswer", or "rollback") or NULL for autodetection.
      */
     public void setRemoteDescription(String sdp, String type) {
-        wrapError("rtcSetRemoteDescription", LibDataChannelNative.rtcSetRemoteDescription(peerHandle, sdp, type));
+        wrapError("rtcSetRemoteDescription", rtcSetRemoteDescription(peerHandle, sdp, type));
     }
 
     /**
@@ -198,7 +214,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the current remote description
      */
     public String remoteDescription() {
-        return LibDataChannelNative.rtcGetRemoteDescription(peerHandle);
+        return rtcGetRemoteDescription(peerHandle);
     }
 
 
@@ -208,7 +224,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the current remote description type
      */
     public String remoteDescriptionType() {
-        return LibDataChannelNative.rtcGetRemoteDescriptionType(peerHandle);
+        return rtcGetRemoteDescriptionType(peerHandle);
     }
 
     /**
@@ -230,7 +246,7 @@ public class PeerConnection implements AutoCloseable {
      *                  autodetection
      */
     public void addRemoteCandidate(String candidate, String mid) {
-        wrapError("rtcAddRemoteCandidate", LibDataChannelNative.rtcAddRemoteCandidate(peerHandle, candidate, mid));
+        wrapError("rtcAddRemoteCandidate", rtcAddRemoteCandidate(peerHandle, candidate, mid));
     }
 
     /**
@@ -241,7 +257,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the local address
      */
     public InetSocketAddress localAddress() {
-        return parseAddress(LibDataChannelNative.rtcGetLocalAddress(peerHandle));
+        return parseAddress(rtcGetLocalAddress(peerHandle));
     }
 
     /**
@@ -252,7 +268,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the remote address
      */
     public InetSocketAddress remoteAddress() {
-        return parseAddress(LibDataChannelNative.rtcGetRemoteAddress(peerHandle));
+        return parseAddress(rtcGetRemoteAddress(peerHandle));
     }
 
     /**
@@ -260,7 +276,7 @@ public class PeerConnection implements AutoCloseable {
      * change after connection.
      */
     public CandidatePair selectedCandidatePair() {
-        return LibDataChannelNative.rtcGetSelectedCandidatePair(peerHandle);
+        return rtcGetSelectedCandidatePair(peerHandle);
     }
 
 
@@ -272,7 +288,7 @@ public class PeerConnection implements AutoCloseable {
      * @return maximum stream ID
      */
     public int maxDataChannelStream() {
-        return LibDataChannelNative.rtcGetMaxDataChannelStream(peerHandle);
+        return rtcGetMaxDataChannelStream(peerHandle);
     }
 
     /**
@@ -281,7 +297,7 @@ public class PeerConnection implements AutoCloseable {
      * @return the maximum message size
      */
     public int remoteMaxMessageSize() {
-        return LibDataChannelNative.rtcGetRemoteMaxMessageSize(peerHandle);
+        return rtcGetRemoteMaxMessageSize(peerHandle);
     }
 
     public void onStateChange(PeerConnectionCallback.StateChange cb) {
@@ -340,7 +356,7 @@ public class PeerConnection implements AutoCloseable {
         final DataChannelReliability reliability = init.reliability();
         int stream = init.stream().orElse(0);
         boolean manualStream = init.stream().isPresent();
-        final int channelHandle = wrapError("rtcCreateDataChannelEx", LibDataChannelNative.rtcCreateDataChannelEx(peerHandle, label, reliability.isUnordered(), reliability.isUnreliable(), reliability.maxPacketLifeTime().toMillis(), reliability.maxRetransmits(), init.protocol(), init.isNegotiated(), stream, manualStream));
+        final int channelHandle = wrapError("rtcCreateDataChannelEx", rtcCreateDataChannelEx(peerHandle, label, reliability.isUnordered(), reliability.isUnreliable(), reliability.maxPacketLifeTime().toMillis(), reliability.maxRetransmits(), init.protocol(), init.isNegotiated(), stream, manualStream));
         final DataChannel channel = new DataChannel(this, channelHandle);
         this.channels.put(channelHandle, new DataChannelState(channel));
         return channel;
@@ -349,12 +365,12 @@ public class PeerConnection implements AutoCloseable {
     // Adds a new Track on a Peer Connection. The Peer Connection does not need to be connected, however, the Track will be open only when the Peer Connection is connected.
     // sdp: a null-terminated string specifying the corresponding media SDP. It must start with a m-line and include a mid parameter.
     public Track addTrack(String sdp) {
-        final int trackHandle = wrapError("rtcAddTrack", LibDataChannelNative.rtcAddTrack(peerHandle, sdp));
+        final int trackHandle = wrapError("rtcAddTrack", rtcAddTrack(peerHandle, sdp));
         return new Track(this, trackHandle);
     }
 
     public Track addTrack(TrackInit init) {
-        final int trackHandle = wrapError("rtcAddTrackEx", LibDataChannelNative.rtcAddTrackEx(peerHandle, init.direction().direction, init.codec().codec));
+        final int trackHandle = wrapError("rtcAddTrackEx", rtcAddTrackEx(peerHandle, init.direction().direction, init.codec().codec));
         return new Track(this, trackHandle);
     }
 
