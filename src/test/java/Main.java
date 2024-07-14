@@ -147,7 +147,7 @@ public class Main {
         System.out.println(state);
         if (state == PeerState.RTC_CONNECTED) {
             final var uri = pc.remoteAddress();
-            System.out.println("Connected to " + uri.getAddress().getHostAddress() + ":" + uri.getPort());
+            System.out.println("Connected to " + uri.getHostString() + ":" + uri.getPort());
         }
     }
 
@@ -175,7 +175,10 @@ public class Main {
         System.out.println("Connection Open!");
         c.sendMessage("Hello There!");
         try {
-            c.sendMessage(ByteBuffer.wrap(Files.readAllBytes(Path.of("img.png"))));
+            final byte[] imageBytes = Files.readAllBytes(Path.of("img.png"));
+            final ByteBuffer buffer = ByteBuffer.allocateDirect(imageBytes.length);
+            buffer.put(imageBytes);
+            c.sendMessage(buffer);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -61,7 +61,9 @@ class PeerConnectionListener {
 
     private <T> void invokeWithChannel(int handle, Function<DataChannel, EventListenerContainer<T>> listeners, BiConsumer<T, DataChannel> consumer) {
         final DataChannel channel = peer.channel(handle);
-        listeners.apply(channel).invoke(h -> consumer.accept(h, channel));
+        if (channel != null) {
+            listeners.apply(channel).invoke(h -> consumer.accept(h, channel));
+        }
     }
 
     @JNIAccess

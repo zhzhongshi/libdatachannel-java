@@ -1,22 +1,30 @@
 package tel.schich.libdatachannel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 public class EventListenerContainer<T> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(EventListenerContainer.class);
+
     private final String eventName;
     private final Consumer<Boolean> lifecycleCallback;
     private final List<T> listeners;
     private final Lock changeLock;
+    private final Executor executor;
 
-    public EventListenerContainer(String eventName, Consumer<Boolean> lifecycleCallback) {
+    public EventListenerContainer(String eventName, Consumer<Boolean> lifecycleCallback, Executor executor) {
         this.eventName = eventName;
         this.lifecycleCallback = lifecycleCallback;
         this.listeners = new CopyOnWriteArrayList<>();
         this.changeLock = new ReentrantLock();
+        this.executor = executor;
     }
 
     public String eventName() {
@@ -24,9 +32,15 @@ public class EventListenerContainer<T> {
     }
 
     void invoke(Consumer<T> invoker) {
-        for (T listener : this.listeners) {
-            invoker.accept(listener);
-        }
+        executor.execute(() -> {
+            for (T listener : this.listeners) {
+                try {
+                    invoker.accept(listener);
+                } catch (Throwable t) {
+                    LOGGER.error("Handler for event {} failed!", eventName, t);
+                }
+            }
+        });
     }
 
     public void register(T listener) {

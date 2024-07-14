@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 
 /**
  * An RTC data channel, created from a {@link PeerConnection}.
@@ -46,16 +47,16 @@ public class DataChannel implements AutoCloseable {
     public final EventListenerContainer<DataChannelCallback.BufferedAmountLow> onBufferedAmountLow;
     public final EventListenerContainer<DataChannelCallback.Available> onAvailable;
 
-    DataChannel(final PeerConnection peer, final int channelHandle) {
+    DataChannel(final PeerConnection peer, final int channelHandle, final Executor executor) {
         this.peer = peer;
         this.channelHandle = channelHandle;
 
-        this.onOpen = new EventListenerContainer<>("ChannelOpen", set -> rtcSetOpenCallback(channelHandle, set));
-        this.onClosed = new EventListenerContainer<>("ChannelClosed", set -> rtcSetClosedCallback(channelHandle, set));
-        this.onError = new EventListenerContainer<>("ChannelError", set -> rtcSetErrorCallback(channelHandle, set));
-        this.onMessage = new EventListenerContainer<>("ChannelMessage", set -> rtcSetMessageCallback(channelHandle, set));
-        this.onBufferedAmountLow = new EventListenerContainer<>("ChannelBufferedAmountLow", set -> rtcSetBufferedAmountLowCallback(channelHandle, set));
-        this.onAvailable = new EventListenerContainer<>("ChannelAvailable", set -> rtcSetAvailableCallback(channelHandle, set));
+        this.onOpen = new EventListenerContainer<>("ChannelOpen", set -> rtcSetOpenCallback(channelHandle, set), executor);
+        this.onClosed = new EventListenerContainer<>("ChannelClosed", set -> rtcSetClosedCallback(channelHandle, set), executor);
+        this.onError = new EventListenerContainer<>("ChannelError", set -> rtcSetErrorCallback(channelHandle, set), executor);
+        this.onMessage = new EventListenerContainer<>("ChannelMessage", set -> rtcSetMessageCallback(channelHandle, set), executor);
+        this.onBufferedAmountLow = new EventListenerContainer<>("ChannelBufferedAmountLow", set -> rtcSetBufferedAmountLowCallback(channelHandle, set), executor);
+        this.onAvailable = new EventListenerContainer<>("ChannelAvailable", set -> rtcSetAvailableCallback(channelHandle, set), executor);
     }
 
     /**

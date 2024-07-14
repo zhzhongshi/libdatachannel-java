@@ -46,11 +46,13 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 
 public class PeerConnection implements AutoCloseable {
     private static final Logger LOGGER = LoggerFactory.getLogger(PeerConnection.class);
 
     final int peerHandle;
+    private final Executor executor;
     private final ConcurrentMap<Integer, DataChannel> channels;
     private final ConcurrentMap<Integer, Track> tracks;
     private final Cleaner.Cleanable cleanable;
@@ -65,20 +67,21 @@ public class PeerConnection implements AutoCloseable {
     public final EventListenerContainer<PeerConnectionCallback.DataChannel> onDataChannel;
     public final EventListenerContainer<PeerConnectionCallback.Track> onTrack;
 
-    private PeerConnection(int peerHandle) {
+    private PeerConnection(int peerHandle, final Executor executor) {
         this.peerHandle = peerHandle;
+        this.executor = executor;
         this.channels = new ConcurrentHashMap<>();
         this.tracks = new ConcurrentHashMap<>();
         this.listener = new PeerConnectionListener(this);
 
-        this.onLocalDescription = new EventListenerContainer<>("LocalDescription", set -> rtcSetLocalDescriptionCallback(peerHandle, set));
-        this.onLocalCandidate = new EventListenerContainer<>("LocalCandidate", set -> rtcSetLocalCandidateCallback(peerHandle, set));
-        this.onStateChange = new EventListenerContainer<>("StateChange", set -> rtcSetStateChangeCallback(peerHandle, set));
-        this.onIceStateChange = new EventListenerContainer<>("IceStateChange", set -> rtcSetIceStateChangeCallback(peerHandle, set));
-        this.onGatheringStateChange = new EventListenerContainer<>("GatheringStateChange", set -> rtcSetGatheringStateChangeCallback(peerHandle, set));
-        this.onSignalingStateChange = new EventListenerContainer<>("SignalingStateChange", set -> rtcSetSignalingStateChangeCallback(peerHandle, set));
-        this.onDataChannel = new EventListenerContainer<>("DataChannel", set -> rtcSetDataChannelCallback(peerHandle, set));
-        this.onTrack = new EventListenerContainer<>("Track", set -> rtcSetTrackCallback(peerHandle, set));
+        this.onLocalDescription = new EventListenerContainer<>("LocalDescription", set -> rtcSetLocalDescriptionCallback(peerHandle, set), executor);
+        this.onLocalCandidate = new EventListenerContainer<>("LocalCandidate", set -> rtcSetLocalCandidateCallback(peerHandle, set), executor);
+        this.onStateChange = new EventListenerContainer<>("StateChange", set -> rtcSetStateChangeCallback(peerHandle, set), executor);
+        this.onIceStateChange = new EventListenerContainer<>("IceStateChange", set -> rtcSetIceStateChangeCallback(peerHandle, set), executor);
+        this.onGatheringStateChange = new EventListenerContainer<>("GatheringStateChange", set -> rtcSetGatheringStateChangeCallback(peerHandle, set), executor);
+        this.onSignalingStateChange = new EventListenerContainer<>("SignalingStateChange", set -> rtcSetSignalingStateChangeCallback(peerHandle, set), executor);
+        this.onDataChannel = new EventListenerContainer<>("DataChannel", set -> rtcSetDataChannelCallback(peerHandle, set), executor);
+        this.onTrack = new EventListenerContainer<>("Track", set -> rtcSetTrackCallback(peerHandle, set), executor);
 
         this.cleanable = LibDataChannel.CLEANER.register(this, () -> {
             // make sure not to capture this here, that would be a memory leak
@@ -113,7 +116,7 @@ public class PeerConnection implements AutoCloseable {
      * @param config the peer configuration
      * @return the peer connection
      */
-    public static PeerConnection createPeer(PeerConnectionConfiguration config) {
+    public static PeerConnection createPeer(PeerConnectionConfiguration config, Executor executor) {
         String proxyServer = null;
         if (config.proxyServer != null) {
             proxyServer = config.proxyServer.toASCIIString();
@@ -137,10 +140,14 @@ public class PeerConnection implements AutoCloseable {
                 config.mtu,
                 config.maxMessageSize);
 
-        final PeerConnection peer = new PeerConnection(wrapError("rtcCreatePeerConnection", result));
+        final PeerConnection peer = new PeerConnection(wrapError("rtcCreatePeerConnection", result), executor);
         setupPeerConnectionListener(peer.peerHandle, peer.listener);
 
         return peer;
+    }
+
+    public static PeerConnection createPeer(PeerConnectionConfiguration config) {
+        return createPeer(config, Runnable::run);
     }
 
     DataChannel channel(int channelHandle) {
@@ -365,7 +372,7 @@ public class PeerConnection implements AutoCloseable {
         int stream = init.stream().orElse(0);
         boolean manualStream = init.stream().isPresent();
         final int channelHandle = wrapError("rtcCreateDataChannelEx", rtcCreateDataChannelEx(peerHandle, label, reliability.isUnordered(), reliability.isUnreliable(), reliability.maxPacketLifeTime().toMillis(), reliability.maxRetransmits(), init.protocol(), init.isNegotiated(), stream, manualStream));
-        final DataChannel channel = new DataChannel(this, channelHandle);
+        final DataChannel channel = new DataChannel(this, channelHandle, executor);
         this.channels.put(channelHandle, channel);
         return channel;
     }
