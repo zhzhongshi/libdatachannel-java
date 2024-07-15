@@ -33,7 +33,7 @@ import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetTrackCallback
 import static tel.schich.libdatachannel.LibDataChannelNative.setupPeerConnectionListener;
 import static tel.schich.libdatachannel.Util.parseAddress;
 import static tel.schich.libdatachannel.Util.wrapError;
-import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_SUCCESS;
+import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_INVALID;
 
 import java.io.ByteArrayOutputStream;
 import java.lang.ref.Cleaner;
@@ -42,7 +42,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -85,13 +84,8 @@ public class PeerConnection implements AutoCloseable {
 
         this.cleanable = LibDataChannel.CLEANER.register(this, () -> {
             // make sure not to capture this here, that would be a memory leak
-            final int closeResult = rtcClosePeerConnection(peerHandle);
-            if (closeResult != ERR_SUCCESS) {
-                LOGGER.info("Failed close PeerConnection: {}", closeResult);
-            }
-            final int deleteResult = rtcDeletePeerConnection(peerHandle);
-            if (deleteResult != ERR_SUCCESS) {
-                LOGGER.info("Failed delete PeerConnection: {}", closeResult);
+            if (rtcClosePeerConnection(peerHandle) != ERR_INVALID) {
+                rtcDeletePeerConnection(peerHandle);
             }
         });
     }
@@ -184,21 +178,11 @@ public class PeerConnection implements AutoCloseable {
      * Closes all Data Channels.
      */
     public void closeChannels() {
-        List<DataChannel> channels = new ArrayList<>(this.channels.values());
-        this.channels.clear();
-        LibDataChannelException exception = null;
-        for (final DataChannel ch : channels) {
-            try {
-                ch.close();
-            } catch (LibDataChannelException e) {
-                if (exception != null) {
-                    e.addSuppressed(exception);
-                }
-                exception = e;
-            }
+        for (final DataChannel ch : new ArrayList<>(this.channels.values())) {
+            ch.close();
         }
-        if (exception != null) {
-            throw exception;
+        if (!this.channels.isEmpty()) {
+            closeChannels();
         }
     }
 

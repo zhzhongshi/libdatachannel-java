@@ -1,6 +1,7 @@
 package tel.schich.libdatachannel;
 
-import tel.schich.libdatachannel.exception.LibDataChannelException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcClose;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcDeleteDataChannel;
@@ -25,6 +26,7 @@ import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetMessageCallba
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcSetOpenCallback;
 import static tel.schich.libdatachannel.Util.ensureDirect;
 import static tel.schich.libdatachannel.Util.wrapError;
+import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_INVALID;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -36,6 +38,7 @@ import java.util.concurrent.Executor;
  * An RTC data channel, created from a {@link PeerConnection}.
  */
 public class DataChannel implements AutoCloseable {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DataChannel.class);
 
     private final PeerConnection peer;
     final int channelHandle;
@@ -105,27 +108,11 @@ public class DataChannel implements AutoCloseable {
      */
     @Override
     public void close() {
+        if (rtcClose(channelHandle) != ERR_INVALID) {
+            rtcDeleteDataChannel(channelHandle);
+        }
+
         peer.dropChannelState(channelHandle);
-
-        LibDataChannelException closeError = null;
-        try {
-            wrapError("rtcClose", rtcClose(channelHandle));
-        } catch (LibDataChannelException e) {
-            closeError = e;
-        }
-
-        try {
-            wrapError("rtcDeleteDataChannel", rtcDeleteDataChannel(channelHandle));
-        } catch (LibDataChannelException t) {
-            if (closeError != null) {
-                t.addSuppressed(t);
-            }
-            throw t;
-        }
-
-        if (closeError != null) {
-            throw closeError;
-        }
     }
 
     /**
