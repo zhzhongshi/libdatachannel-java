@@ -178,6 +178,7 @@ public class Main {
             final byte[] imageBytes = Files.readAllBytes(Path.of("img.png"));
             final ByteBuffer buffer = ByteBuffer.allocateDirect(imageBytes.length);
             buffer.put(imageBytes);
+            buffer.flip();
             c.sendMessage(buffer);
         } catch (IOException e) {
             throw new RuntimeException(e);
