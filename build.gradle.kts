@@ -4,34 +4,20 @@ import tel.schich.dockcross.execute.NonContainerRunner
 import tel.schich.dockcross.tasks.DockcrossRunTask
 
 plugins {
-    java
+    id("tel.schich.libdatachannel.convention.common")
     id("tel.schich.dockcross") version "0.2.0"
-    `maven-publish`
 }
 
-group = "org.example"
-version = "1.0-SNAPSHOT"
+description = "${project.name} is a binding to the libdatachannel that feels native to Java developers."
 
-java.toolchain {
-    languageVersion = JavaLanguageVersion.of(11)
-}
-
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
-
-dependencies {
+val archDetectConfiguration by configurations.registering {
+    isCanBeConsumed = true
 }
 
 val jniPath = project.layout.projectDirectory.dir("jni")
 tasks.withType<JavaCompile>().configureEach {
     options.compilerArgs.addAll(listOf("-Agenerate.jni.headers=true"))
     options.headerOutputDirectory = jniPath.dir("generated")
-}
-
-tasks.test {
-    useJUnitPlatform()
 }
 
 val nativeGroup = "native"
@@ -138,10 +124,8 @@ for (target in targets) {
     packageNativeAll.configure {
         dependsOn(packageNative)
     }
-}
 
-tasks.test {
-    useJUnitPlatform()
+    artifacts.add(archDetectConfiguration.name, packageNative)
 }
 
 dependencies {
@@ -150,12 +134,11 @@ dependencies {
         compileOnly(it)
     }
 
-    compileOnly("org.eclipse.jdt:org.eclipse.jdt.annotation:2.3.0")
-    implementation("org.slf4j:slf4j-api:2.0.13")
-    implementation("net.java.dev.jna:jna:5.14.0")
-
-    testImplementation(platform("org.junit:junit-bom:5.10.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter")
-    testImplementation("ch.qos.logback:logback-classic:1.5.6")
     testImplementation(files(packageNativeForHost))
+}
+
+publishing.publications.withType<MavenPublication>().configureEach {
+    pom {
+        description = "${project.description}"
+    }
 }
