@@ -2,7 +2,6 @@ package tel.schich.libdatachannel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import tel.schich.libdatachannel.exception.LibDataChannelException;
 
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcAddRemoteCandidate;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcAddTrack;
@@ -169,9 +168,18 @@ public class PeerConnection implements AutoCloseable {
     public void close() {
         try {
             closeChannels();
-        } finally {
-            cleanable.clean();
+        } catch (Exception e) {
+            LOGGER.warn("Failed to close channels of peer connection", e);
         }
+        cleanable.clean();
+        onLocalDescription.close();
+        onLocalCandidate.close();
+        onStateChange.close();
+        onIceStateChange.close();
+        onGatheringStateChange.close();
+        onSignalingStateChange.close();
+        onDataChannel.close();
+        onTrack.close();
     }
 
     /**

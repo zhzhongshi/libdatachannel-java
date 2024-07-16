@@ -113,6 +113,12 @@ public class DataChannel implements AutoCloseable {
         }
 
         peer.dropChannelState(channelHandle);
+        onOpen.close();
+        onClosed.close();
+        onError.close();
+        onMessage.close();
+        onBufferedAmountLow.close();
+        onAvailable.close();
     }
 
     /**
