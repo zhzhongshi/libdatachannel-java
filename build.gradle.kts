@@ -6,6 +6,7 @@ import tel.schich.dockcross.tasks.DockcrossRunTask
 plugins {
     id("tel.schich.libdatachannel.convention.common")
     id("tel.schich.dockcross") version "0.2.0"
+    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
 description = "${project.name} is a binding to the libdatachannel that feels native to Java developers."
@@ -140,5 +141,18 @@ dependencies {
 publishing.publications.withType<MavenPublication>().configureEach {
     pom {
         description = "${project.description}"
+    }
+}
+
+val mavenCentralDeploy by tasks.registering(DefaultTask::class) {
+    group = "publishing"
+    val isSnapshot = project.version.toString().endsWith("-SNAPSHOT")
+
+    val publishTasks = allprojects
+        .flatMap { it.tasks.withType<PublishToMavenRepository>() }
+        .filter { it.repository.name == "sonatype" }
+    dependsOn(publishTasks)
+    if (!isSnapshot) {
+        dependsOn(tasks.closeAndReleaseStagingRepositories)
     }
 }
