@@ -150,6 +150,7 @@ dependencies {
         compileOnly(it)
     }
 
+    compileOnly("org.eclipse.jdt:org.eclipse.jdt.annotation:2.3.0")
     implementation("org.slf4j:slf4j-api:2.0.13")
     implementation("net.java.dev.jna:jna:5.14.0")
 

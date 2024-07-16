@@ -1,5 +1,8 @@
 package tel.schich.libdatachannel;
 
+import org.eclipse.jdt.annotation.Nullable;
+
+import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
@@ -9,11 +12,13 @@ public class DataChannelInitSettings {
     public static final DataChannelInitSettings DEFAULT = new DataChannelInitSettings(DataChannelReliability.DEFAULT, null, false, null);
 
     private final DataChannelReliability reliability;
+    @Nullable
 	private final String protocol;
     private final boolean negotiated;
+    @Nullable
     private final Integer stream; // numeric ID 0-65534, ignored if manualStream is false
 
-    private DataChannelInitSettings(DataChannelReliability reliability, String protocol, boolean negotiated, Integer stream) {
+    private DataChannelInitSettings(DataChannelReliability reliability, @Nullable String protocol, boolean negotiated, @Nullable Integer stream) {
         this.reliability = reliability;
         this.protocol = protocol;
         this.negotiated = negotiated;
@@ -35,8 +40,8 @@ public class DataChannelInitSettings {
         return new DataChannelInitSettings(reliability, protocol, negotiated, stream);
     }
 
-    public String protocol() {
-        return protocol;
+    public Optional<String> protocol() {
+        return Optional.ofNullable(protocol);
     }
 
     /**

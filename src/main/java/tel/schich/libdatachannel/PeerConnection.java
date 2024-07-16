@@ -1,5 +1,6 @@
 package tel.schich.libdatachannel;
 
+import org.eclipse.jdt.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +36,7 @@ import static tel.schich.libdatachannel.Util.wrapError;
 import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_INVALID;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.lang.ref.Cleaner;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -46,7 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 
-public class PeerConnection implements AutoCloseable {
+public class PeerConnection implements Closeable {
     private static final Logger LOGGER = LoggerFactory.getLogger(PeerConnection.class);
 
     final int peerHandle;
@@ -89,7 +91,7 @@ public class PeerConnection implements AutoCloseable {
         });
     }
 
-    private static byte[] iceUrisToCStrings(Collection<URI> uris) {
+    private static byte @Nullable [] iceUrisToCStrings(@Nullable Collection<URI> uris) {
         if (uris == null || uris.isEmpty()) {
             return null;
         }
@@ -143,16 +145,21 @@ public class PeerConnection implements AutoCloseable {
         return createPeer(config, Runnable::run);
     }
 
+    @Nullable
     DataChannel channel(int channelHandle) {
         return channels.get(channelHandle);
+    }
+
+    DataChannel newChannel(int channelHandle) {
+        return channels.computeIfAbsent(channelHandle, h -> new DataChannel(this, h, executor));
     }
 
     void dropChannelState(int channelHandle) {
         channels.remove(channelHandle);
     }
 
-    Track trackState(int trackHandle) {
-        return tracks.get(trackHandle);
+    Track newTrack(int trackHandle) {
+        return tracks.computeIfAbsent(trackHandle, h -> new Track(this, h));
     }
 
     public void dropTrackState(int trackHandle) {
@@ -236,8 +243,12 @@ public class PeerConnection implements AutoCloseable {
      * @param sdp  the remote Session Description Protocol
      * @param type (optional): type of the description ("offer", "answer", "pranswer", or "rollback") or NULL for autodetection.
      */
-    public void setRemoteDescription(String sdp, String type) {
-        wrapError("rtcSetRemoteDescription", rtcSetRemoteDescription(peerHandle, sdp, type));
+    public void setRemoteDescription(String sdp, @Nullable SessionDescriptionType type) {
+        String typeString = null;
+        if (type != null) {
+            typeString = type.type;
+        }
+        wrapError("rtcSetRemoteDescription", rtcSetRemoteDescription(peerHandle, sdp, typeString));
     }
 
     /**
@@ -255,8 +266,8 @@ public class PeerConnection implements AutoCloseable {
      *
      * @return the current remote description type
      */
-    public String remoteDescriptionType() {
-        return rtcGetRemoteDescriptionType(peerHandle);
+    public SessionDescriptionType remoteDescriptionType() {
+        return SessionDescriptionType.of(rtcGetRemoteDescriptionType(peerHandle));
     }
 
     /**
@@ -274,11 +285,11 @@ public class PeerConnection implements AutoCloseable {
      * The Peer Connection must have a remote description set.
      *
      * @param candidate a null-terminated SDP string representing the candidate (with or without the "a=" prefix)
-     * @param mid       (optional): a null-terminated string representing the mid of the candidate in the remote SDP description or NULL for
+     * @param mediaId       (optional): a null-terminated string representing the mediaId of the candidate in the remote SDP description or NULL for
      *                  autodetection
      */
-    public void addRemoteCandidate(String candidate, String mid) {
-        wrapError("rtcAddRemoteCandidate", rtcAddRemoteCandidate(peerHandle, candidate, mid));
+    public void addRemoteCandidate(String candidate, @Nullable String mediaId) {
+        wrapError("rtcAddRemoteCandidate", rtcAddRemoteCandidate(peerHandle, candidate, mediaId));
     }
 
     /**
@@ -333,7 +344,7 @@ public class PeerConnection implements AutoCloseable {
     }
 
     public void setAnswer(String sdp) {
-        this.setRemoteDescription(sdp, "answer");
+        this.setRemoteDescription(sdp, SessionDescriptionType.ANSWER);
     }
 
 
@@ -363,7 +374,7 @@ public class PeerConnection implements AutoCloseable {
         final DataChannelReliability reliability = init.reliability();
         int stream = init.stream().orElse(0);
         boolean manualStream = init.stream().isPresent();
-        final int channelHandle = wrapError("rtcCreateDataChannelEx", rtcCreateDataChannelEx(peerHandle, label, reliability.isUnordered(), reliability.isUnreliable(), reliability.maxPacketLifeTime().toMillis(), reliability.maxRetransmits(), init.protocol(), init.isNegotiated(), stream, manualStream));
+        final int channelHandle = wrapError("rtcCreateDataChannelEx", rtcCreateDataChannelEx(peerHandle, label, reliability.isUnordered(), reliability.isUnreliable(), reliability.maxPacketLifeTime().toMillis(), reliability.maxRetransmits(), init.protocol().orElse(null), init.isNegotiated(), stream, manualStream));
         final DataChannel channel = new DataChannel(this, channelHandle, executor);
         this.channels.put(channelHandle, channel);
         return channel;

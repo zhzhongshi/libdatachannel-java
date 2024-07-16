@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 import java.util.Map;
 
 public enum IceState {
@@ -20,6 +22,7 @@ public enum IceState {
         this.state = state;
     }
 
+    @Nullable
     static IceState of(final int state) {
         return MAP.get(state);
     }

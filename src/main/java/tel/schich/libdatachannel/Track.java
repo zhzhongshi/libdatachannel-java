@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcDeleteTrack;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetTrackDescription;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetTrackDirection;
@@ -7,10 +9,11 @@ import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetTrackMid;
 import static tel.schich.libdatachannel.Util.mappedEnum;
 import static tel.schich.libdatachannel.Util.wrapError;
 
+import java.io.Closeable;
 import java.util.Map;
 import java.util.Objects;
 
-public class Track implements AutoCloseable {
+public class Track implements Closeable {
     private final PeerConnection peer;
     private final int trackHandle;
 
@@ -36,7 +39,12 @@ public class Track implements AutoCloseable {
 
     // Retrieves the direction of a Track.
     public Direction direction() {
-        return Direction.of(rtcGetTrackDirection(trackHandle));
+        final int directionInt = rtcGetTrackDirection(trackHandle);
+        final Direction direction = Direction.of(directionInt);
+        if (direction == null) {
+            throw new IllegalStateException("Unknown track direction: " + directionInt);
+        }
+        return direction;
     }
 
     @Override
@@ -75,7 +83,8 @@ public class Track implements AutoCloseable {
             this.direction = direction;
         }
 
-        static Direction of(final int direction) {
+        @Nullable
+        public static Direction of(final int direction) {
             return MAP.get(direction);
         }
     }
@@ -101,6 +110,7 @@ public class Track implements AutoCloseable {
             this.codec = codec;
         }
 
+        @Nullable
         static Codec of(final int codec) {
             return MAP.get(codec);
         }

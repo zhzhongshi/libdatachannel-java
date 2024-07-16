@@ -6,13 +6,11 @@ import java.nio.ByteBuffer;
  * Callback interfaces for {@link DataChannel}
  */
 public interface DataChannelCallback {
-
     /**
      * Called when the channel was previously connecting and is now open.
      */
     @FunctionalInterface
     interface Open {
-
         void onOpen(DataChannel channel);
     }
 
@@ -21,7 +19,6 @@ public interface DataChannelCallback {
      */
     @FunctionalInterface
     interface Closed {
-
         void onClosed(DataChannel channel);
     }
 
@@ -30,7 +27,6 @@ public interface DataChannelCallback {
      */
     @FunctionalInterface
     interface Error {
-
         void onError(DataChannel channel, final String error);
     }
 
@@ -97,7 +93,6 @@ public interface DataChannelCallback {
      */
     @FunctionalInterface
     interface BufferedAmountLow {
-
         void onBufferedAmountLow(DataChannel channel);
     }
 
@@ -106,8 +101,6 @@ public interface DataChannelCallback {
      */
     @FunctionalInterface
     interface Available {
-
         void onAvailable(DataChannel channel);
     }
-
 }

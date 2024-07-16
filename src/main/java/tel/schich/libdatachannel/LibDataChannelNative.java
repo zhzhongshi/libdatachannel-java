@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 import java.nio.ByteBuffer;
 
 class LibDataChannelNative {
@@ -7,7 +9,7 @@ class LibDataChannelNative {
         LibDataChannel.initialize();
     }
 
-    static native int rtcCreatePeerConnection(byte[] iceServers, String proxyServer, String bindAddress, int certificateType, int iceTransportPolicy, boolean enableIceTcp, boolean enableIceUdpMux, boolean disableAutoNegotiation, boolean forceMediaTransport, short portRangeBegin, short portRangeEnd, int mtu, int maxMessageSize);
+    static native int rtcCreatePeerConnection(byte @Nullable [] iceServers, @Nullable String proxyServer, @Nullable String bindAddress, int certificateType, int iceTransportPolicy, boolean enableIceTcp, boolean enableIceUdpMux, boolean disableAutoNegotiation, boolean forceMediaTransport, short portRangeBegin, short portRangeEnd, int mtu, int maxMessageSize);
     static native int setupPeerConnectionListener(int peerHandle, PeerConnectionListener listener);
     static native int rtcClosePeerConnection(int peerHandle);
     static native int rtcDeletePeerConnection(int peerHandle);
@@ -15,10 +17,10 @@ class LibDataChannelNative {
     static native int rtcSetLocalDescription(int peerHandle, String type);
     static native String rtcGetLocalDescription(int peerHandle);
     static native String rtcGetLocalDescriptionType(int peerHandle);
-    static native int rtcSetRemoteDescription(int peerHandle, String sdp, String type);
+    static native int rtcSetRemoteDescription(int peerHandle, String sdp, @Nullable String type);
     static native String rtcGetRemoteDescription(int peerHandle);
     static native String rtcGetRemoteDescriptionType(int peerHandle);
-    static native int rtcAddRemoteCandidate(int peerHandle, String candidate, String mediaId);
+    static native int rtcAddRemoteCandidate(int peerHandle, String candidate, @Nullable String mediaId);
     static native String rtcGetLocalAddress(int peerHandle);
     static native String rtcGetRemoteAddress(int peerHandle);
     static native CandidatePair rtcGetSelectedCandidatePair(int peerHandle);
@@ -40,7 +42,7 @@ class LibDataChannelNative {
 
     static native int rtcGetMaxDataChannelStream(int peerHandle);
     static native int rtcGetRemoteMaxMessageSize(int peerHandle);
-    static native int rtcCreateDataChannelEx(int peerHandle, String label, boolean unordered, boolean unreliable, long maxPacketLifeTime, int maxRetransmits, String protocol, boolean negotiated, int stream, boolean manualStream);
+    static native int rtcCreateDataChannelEx(int peerHandle, String label, boolean unordered, boolean unreliable, long maxPacketLifeTime, int maxRetransmits, @Nullable String protocol, boolean negotiated, int stream, boolean manualStream);
     static native int rtcClose(int channelHandle);
     static native int rtcDeleteDataChannel(int channelHandle);
     static native boolean rtcIsClosed(int channelHandle);
@@ -48,6 +50,7 @@ class LibDataChannelNative {
     static native int rtcMaxMessageSize(int channelHandle);
     static native int rtcSetBufferedAmountLowThreshold(int channelHandle, int amount);
     static native int rtcSendMessage(int channelHandle, ByteBuffer data, int offset, int length);
+    @Nullable
     static native ByteBuffer rtcReceiveMessage(int channelHandle);
     static native int rtcReceiveMessageInto(int channelHandle, ByteBuffer buffer, int offset, int capacity);
     static native int rtcGetAvailableAmount(int channelHandle);

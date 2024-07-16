@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 import java.util.Map;
 
 public enum PeerState {
@@ -18,7 +20,8 @@ public enum PeerState {
         this.state = state;
     }
 
-    static PeerState of(final int state) {
+    @Nullable
+    public static PeerState of(final int state) {
         return MAP.get(state);
     }
 }

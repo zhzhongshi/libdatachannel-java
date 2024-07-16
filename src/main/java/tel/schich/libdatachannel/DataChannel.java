@@ -1,8 +1,5 @@
 package tel.schich.libdatachannel;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcClose;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcDeleteDataChannel;
 import static tel.schich.libdatachannel.LibDataChannelNative.rtcGetAvailableAmount;
@@ -28,6 +25,7 @@ import static tel.schich.libdatachannel.Util.ensureDirect;
 import static tel.schich.libdatachannel.Util.wrapError;
 import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_INVALID;
 
+import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -37,9 +35,7 @@ import java.util.concurrent.Executor;
 /**
  * An RTC data channel, created from a {@link PeerConnection}.
  */
-public class DataChannel implements AutoCloseable {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DataChannel.class);
-
+public class DataChannel implements Closeable {
     private final PeerConnection peer;
     final int channelHandle;
 
@@ -172,7 +168,7 @@ public class DataChannel implements AutoCloseable {
      * @return the received message
      */
     public Optional<ByteBuffer> receiveMessage() {
-        return Optional.of(rtcReceiveMessage(channelHandle));
+        return Optional.ofNullable(rtcReceiveMessage(channelHandle));
     }
 
     /**

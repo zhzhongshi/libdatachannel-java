@@ -6,7 +6,7 @@ public interface PeerConnectionCallback {
      */
     @FunctionalInterface
     interface LocalDescription {
-        void handleDescription(PeerConnection peer, String sdp, String type);
+        void handleDescription(PeerConnection peer, String sdp, SessionDescriptionType type);
     }
 
     /**

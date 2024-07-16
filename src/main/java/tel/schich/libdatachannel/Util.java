@@ -10,10 +10,12 @@ import tel.schich.libdatachannel.exception.UnknownFailureException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.toMap;
 import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_FAILURE;
 import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_INVALID;
 import static tel.schich.libdatachannel.exception.LibDataChannelException.ERR_NOT_AVAIL;
@@ -35,8 +37,8 @@ class Util {
         return InetSocketAddress.createUnresolved(ip, port);
     }
 
-    static <T, K> Map<K, T> mappedEnum(final T[] values, Function<T, K> mapper) {
-        return Arrays.stream(values).collect(Collectors.toMap(mapper, s -> s));
+    static <T extends Enum<T>, K> Map<K, T> mappedEnum(final T[] values, Function<T, K> mapper) {
+        return Arrays.stream(values).collect(toMap(mapper, s -> s));
     }
 
     static int wrapError(String operation, int result) throws LibDataChannelException {

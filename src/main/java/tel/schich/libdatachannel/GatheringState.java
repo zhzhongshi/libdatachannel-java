@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 import java.util.Map;
 
 /**
@@ -17,6 +19,7 @@ public enum GatheringState {
         this.state = state;
     }
 
+    @Nullable
     static GatheringState of(final int state) {
         return MAP.get(state);
     }

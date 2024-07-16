@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -27,7 +29,9 @@ public class PeerConnectionConfiguration {
             0);
 
     final List<URI> iceServers;
+    @Nullable
     final URI proxyServer;
+    @Nullable
     final InetAddress bindAddress;
     final CertificateType certificateType;
     final IceTransportPolicy iceTransportPolicy;
@@ -40,7 +44,7 @@ public class PeerConnectionConfiguration {
     final int mtu;
     final int maxMessageSize;
 
-    private PeerConnectionConfiguration(List<URI> iceServers, URI proxyServer, InetAddress bindAddress, CertificateType certificateType, IceTransportPolicy iceTransportPolicy, boolean enableIceTcp, boolean enableIceUdpMux, boolean disableAutoNegotiation, boolean forceMediaTransport, short portRangeBegin, short portRangeEnd, int mtu, int maxMessageSize) {
+    private PeerConnectionConfiguration(List<URI> iceServers, @Nullable URI proxyServer, @Nullable InetAddress bindAddress, CertificateType certificateType, IceTransportPolicy iceTransportPolicy, boolean enableIceTcp, boolean enableIceUdpMux, boolean disableAutoNegotiation, boolean forceMediaTransport, short portRangeBegin, short portRangeEnd, int mtu, int maxMessageSize) {
         this.iceServers = iceServers;
         this.proxyServer = proxyServer;
         this.bindAddress = bindAddress;
@@ -81,7 +85,7 @@ public class PeerConnectionConfiguration {
     }
 
     public Optional<URI> proxyServer() {
-        return Optional.of(proxyServer);
+        return Optional.ofNullable(proxyServer);
     }
 
     /**
@@ -92,7 +96,7 @@ public class PeerConnectionConfiguration {
     }
 
     public Optional<InetAddress> bindAddress() {
-        return Optional.of(bindAddress);
+        return Optional.ofNullable(bindAddress);
     }
 
     /**
@@ -236,6 +240,7 @@ public class PeerConnectionConfiguration {
             this.state = state;
         }
 
+        @Nullable
         public static CertificateType of(final int state) {
             return MAP.get(state);
         }
@@ -255,9 +260,9 @@ public class PeerConnectionConfiguration {
             this.state = state;
         }
 
+        @Nullable
         public static IceTransportPolicy of(final int state) {
             return MAP.get(state);
         }
-
     }
 }

@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 import java.util.Map;
 
 public enum SignalingState {
@@ -18,7 +20,8 @@ public enum SignalingState {
         this.state = state;
     }
 
-    static SignalingState of(final int state) {
+    @Nullable
+    public static SignalingState of(final int state) {
         return MAP.get(state);
     }
 }

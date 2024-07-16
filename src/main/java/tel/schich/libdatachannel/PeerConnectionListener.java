@@ -1,5 +1,7 @@
 package tel.schich.libdatachannel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import tel.schich.jniaccess.JNIAccess;
 
 import java.nio.ByteBuffer;
@@ -7,6 +9,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 class PeerConnectionListener {
+    private static final Logger LOGGER = LoggerFactory.getLogger(PeerConnectionListener.class);
+
     private final PeerConnection peer;
 
     public PeerConnectionListener(final PeerConnection peer) {
@@ -15,7 +19,12 @@ class PeerConnectionListener {
 
     @JNIAccess
     void onLocalDescription(String sdp, String type) {
-        peer.onLocalDescription.invoke(h -> h.handleDescription(peer, sdp, type));
+        final SessionDescriptionType mappedType = SessionDescriptionType.of(type);
+        if (mappedType == null) {
+            LOGGER.error("Unknown SDP type {}!", type);
+            return;
+        }
+        peer.onLocalDescription.invoke(h -> h.handleDescription(peer, sdp, mappedType));
     }
 
     @JNIAccess
@@ -25,45 +34,63 @@ class PeerConnectionListener {
 
     @JNIAccess
     void onStateChange(int state) {
-        final PeerState s = PeerState.of(state);
-        peer.onStateChange.invoke(h -> h.handleChange(peer, s));
+        final PeerState mappedState = PeerState.of(state);
+        if (mappedState == null) {
+            LOGGER.error("Unknown state {}!", state);
+            return;
+        }
+        peer.onStateChange.invoke(h -> h.handleChange(peer, mappedState));
     }
 
     @JNIAccess
     void onIceStateChange(int iceState) {
-        final IceState s = IceState.of(iceState);
-        peer.onIceStateChange.invoke(h -> h.handleChange(peer, s));
+        final IceState mappedState = IceState.of(iceState);
+        if (mappedState == null) {
+            LOGGER.error("Unknown ICE state {}!", iceState);
+            return;
+        }
+        peer.onIceStateChange.invoke(h -> h.handleChange(peer, mappedState));
     }
 
     @JNIAccess
     void onGatheringStateChange(int gatheringState) {
-        final GatheringState s = GatheringState.of(gatheringState);
-        peer.onGatheringStateChange.invoke(h -> h.handleChange(peer, s));
+        final GatheringState mappedState = GatheringState.of(gatheringState);
+        if (mappedState == null) {
+            LOGGER.error("Unknown gathering state {}!", gatheringState);
+            return;
+        }
+        peer.onGatheringStateChange.invoke(h -> h.handleChange(peer, mappedState));
     }
 
     @JNIAccess
     void onSignalingStateChange(int signalingState) {
-        final SignalingState s = SignalingState.of(signalingState);
-        peer.onSignalingStateChange.invoke(h -> h.handleChange(peer, s));
+        final SignalingState mappedState = SignalingState.of(signalingState);
+        if (mappedState == null) {
+            LOGGER.error("Unknown signaling state {}!", signalingState);
+            return;
+        }
+        peer.onSignalingStateChange.invoke(h -> h.handleChange(peer, mappedState));
     }
 
     @JNIAccess
     void onDataChannel(int channelHandle) {
-        final DataChannel channel = peer.channel(channelHandle);
+        final DataChannel channel = peer.newChannel(channelHandle);
         peer.onDataChannel.invoke(h -> h.handleChannel(peer, channel));
     }
 
     @JNIAccess
     void onTrack(int trackHandle) {
-        final Track state = peer.trackState(trackHandle);
+        final Track state = peer.newTrack(trackHandle);
         peer.onTrack.invoke(h -> h.handleTrack(peer, state));
     }
 
     private <T> void invokeWithChannel(int handle, Function<DataChannel, EventListenerContainer<T>> listeners, BiConsumer<T, DataChannel> consumer) {
         final DataChannel channel = peer.channel(handle);
-        if (channel != null) {
-            listeners.apply(channel).invoke(h -> consumer.accept(h, channel));
+        if (channel == null) {
+            LOGGER.warn("Received event for unknown data channel {}!", handle);
+            return;
         }
+        listeners.apply(channel).invoke(h -> consumer.accept(h, channel));
     }
 
     @JNIAccess
