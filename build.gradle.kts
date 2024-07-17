@@ -144,6 +144,12 @@ publishing.publications.withType<MavenPublication>().configureEach {
     }
 }
 
+nexusPublishing {
+    this.repositories {
+        sonatype()
+    }
+}
+
 val mavenCentralDeploy by tasks.registering(DefaultTask::class) {
     group = "publishing"
     val isSnapshot = project.version.toString().endsWith("-SNAPSHOT")
