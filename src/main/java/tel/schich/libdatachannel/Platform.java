@@ -74,7 +74,7 @@ class Platform {
         return arch;
     }
 
-    private static String libraryFilename(String name) {
+    public static String libraryFilename(String name) {
         if (getOS() == OS.WINDOWS) {
             return name + ".dll";
         }
