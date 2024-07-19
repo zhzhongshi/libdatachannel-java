@@ -5,7 +5,7 @@ class LibDataChannel(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
 
     def requirements(self):
-        self.requires("openssl/1.1.0l")
+        self.requires("openssl/3.2.2")
 
     def generate(self):
         d = CMakeDeps(self)
