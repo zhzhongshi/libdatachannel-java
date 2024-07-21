@@ -5,7 +5,7 @@ import tel.schich.dockcross.tasks.DockcrossRunTask
 
 plugins {
     id("tel.schich.libdatachannel.convention.common")
-    id("tel.schich.dockcross") version "0.2.2"
+    id("tel.schich.dockcross") version "0.2.3"
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
