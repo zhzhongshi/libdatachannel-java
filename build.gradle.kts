@@ -1,4 +1,3 @@
-import org.gradle.configurationcache.extensions.capitalized
 import tel.schich.dockcross.execute.DockerRunner
 import tel.schich.dockcross.execute.NonContainerRunner
 import tel.schich.dockcross.execute.SubstitutingString
@@ -107,7 +106,8 @@ val packageNativeAll by tasks.registering(DefaultTask::class) {
 
 for (target in targets) {
     val outputDir: Directory = dockcrossOutputDir.dir(target.classifier)
-    val taskSuffix = target.classifier.split("[_-]".toRegex()).joinToString(separator = "") { it.capitalized() }
+    val taskSuffix = target.classifier.split("[_-]".toRegex())
+        .joinToString(separator = "") { it.lowercase().replaceFirstChar(Char::uppercaseChar) }
     val compileNative = tasks.register("compileNativeFor$taskSuffix", DockcrossRunTask::class) {
         baseConfigure(outputDir, target.args)
         unsafeWritableMountSource = true
