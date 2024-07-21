@@ -112,6 +112,7 @@ for (target in targets) {
         baseConfigure(outputDir, target.args)
         unsafeWritableMountSource = true
         image = target.image
+        containerName = "dockcross-${project.name}-${target.classifier}"
 
         if (ci) {
             runner(DockerRunner())
