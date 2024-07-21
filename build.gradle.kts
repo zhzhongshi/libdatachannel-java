@@ -94,6 +94,7 @@ data class BuildTarget(
 
 val targets = listOf(
     BuildTarget(image = "linux-x64", classifier = "x86_64"),
+    BuildTarget(image = "linux-x86", classifier = "x86_32"),
     BuildTarget(image = "linux-arm64", classifier = "aarch64"),
 //    BuildTarget(image = "windows-shared-x64", classifier = "windows-x86_64", args = listOf("-DUSE_GNUTLS=1")),
 )
