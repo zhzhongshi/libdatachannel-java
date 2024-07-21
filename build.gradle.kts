@@ -2,12 +2,25 @@ import tel.schich.dockcross.execute.DockerRunner
 import tel.schich.dockcross.execute.NonContainerRunner
 import tel.schich.dockcross.execute.SubstitutingString
 import tel.schich.dockcross.tasks.DockcrossRunTask
+import java.nio.file.Files
 
 plugins {
     id("tel.schich.libdatachannel.convention.common")
     id("tel.schich.dockcross") version "0.2.3"
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
+
+fun extractLibDataChannelVersion(): String {
+    val regex = """#define\s+RTC_VERSION\s+"([^"]+)"""".toRegex()
+    val headerPath = project.layout.projectDirectory
+        .file("jni/libdatachannel/include/rtc/version.h")
+        .asFile.toPath()
+    val headerContent = Files.readString(headerPath)
+    val match = regex.find(headerContent) ?: return "unknown"
+
+    return match.groupValues[1]
+}
+version = "${extractLibDataChannelVersion()}.1-SNAPSHOT"
 
 description = "${project.name} is a binding to the libdatachannel that feels native to Java developers."
 

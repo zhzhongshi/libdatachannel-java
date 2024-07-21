@@ -5,7 +5,6 @@ plugins {
 }
 
 group = "tel.schich"
-version = "1.0-SNAPSHOT"
 
 val ci = System.getenv("CI") != null
 

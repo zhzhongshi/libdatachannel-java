@@ -2,6 +2,8 @@ plugins {
     id("tel.schich.libdatachannel.convention.common")
 }
 
+version = rootProject.version
+
 val nativeLibs by configurations.registering
 
 dependencies {
