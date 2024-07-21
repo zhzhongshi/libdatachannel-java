@@ -6,7 +6,7 @@ import tel.schich.dockcross.tasks.DockcrossRunTask
 
 plugins {
     id("tel.schich.libdatachannel.convention.common")
-    id("tel.schich.dockcross") version "0.2.0"
+    id("tel.schich.dockcross") version "0.2.1"
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
@@ -30,7 +30,7 @@ val buildReleaseBinaries = project.findProperty("libdatachannel.build-release-bi
     ?.toBooleanStrictOrNull()
     ?: !project.version.toString().endsWith("-SNAPSHOT")
 
-fun DockcrossRunTask.baseConfigure(outputTo: Directory, args: List<String> = emptyList(), conanProfile: String? = null) {
+fun DockcrossRunTask.baseConfigure(outputTo: Directory, args: List<String> = emptyList()) {
     group = nativeGroup
 
     dockcrossTag = "20240529-0dade71"
@@ -109,7 +109,7 @@ for (target in targets) {
     val outputDir: Directory = dockcrossOutputDir.dir(target.classifier)
     val taskSuffix = target.classifier.split("[_-]".toRegex()).joinToString(separator = "") { it.capitalized() }
     val compileNative = tasks.register("compileNativeFor$taskSuffix", DockcrossRunTask::class) {
-        baseConfigure(outputDir, target.args, target.image)
+        baseConfigure(outputDir, target.args)
         unsafeWritableMountSource = true
         image = target.image
 
