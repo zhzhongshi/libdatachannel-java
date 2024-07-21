@@ -9,7 +9,6 @@ find_package(Java 11 REQUIRED)
 set(OPENSSL_USE_STATIC_LIBS FALSE CACHE BOOL "configure libdatachannel build")
 
 option(PROJECT_VERSION "The version of the project  " "unspecified")
-option(IS_RELEASE "Whether this is a release build" OFF)
 
 set(NO_WEBSOCKET ON CACHE BOOL "configure libdatachannel build")
 set(NO_MEDIA ON CACHE BOOL "configure libdatachannel build")
