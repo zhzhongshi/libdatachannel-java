@@ -42,6 +42,8 @@ fun DockcrossRunTask.baseConfigure(outputTo: Directory, args: List<String> = emp
     output = outputTo.dir("native")
     val conanDir = "conan"
     extraEnv.put("CONAN_HOME", SubstitutingString("\${OUTPUT_DIR}/$conanDir/home"))
+    // OpenSSL's makefile constructs broken compiler paths due to CROSS_COMPILE
+    extraEnv.put("CROSS_COMPILE", "")
 
     val relativePathToProject = output.get().asFile.toPath().relativize(jniPath.asFile.toPath()).toString()
     val projectVersionOption = "-DPROJECT_VERSION=${project.version}"
