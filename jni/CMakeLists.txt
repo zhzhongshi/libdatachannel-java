@@ -24,10 +24,13 @@ add_compile_options(-Werror -fPIC -D "PROJECT_VERSION=${PROJECT_VERSION}")
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O3 -flto)
 else()
-    add_compile_options(-g3 -Og)
+    add_compile_options(-g3 -Og -fsanitize=address)
 endif()
 
 add_link_options(-z noexecstack -fvisibility=hidden)
+if(NOT (CMAKE_BUILD_TYPE STREQUAL "Release"))
+    add_link_options(-fsanitize=address)
+endif()
 
 add_library(datachannel-java SHARED
         generated/jni-c-to-java.c
