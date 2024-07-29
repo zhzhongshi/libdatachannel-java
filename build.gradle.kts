@@ -45,7 +45,7 @@ val buildReleaseBinaries = project.findProperty("libdatachannel.build-release-bi
 fun DockcrossRunTask.baseConfigure(outputTo: Directory, args: List<String> = emptyList()) {
     group = nativeGroup
 
-    dockcrossTag = "20240727-3995c0c"
+    dockcrossTag = "20240729-13d3b71"
     inputs.dir(jniPath)
 
     dependsOn(tasks.compileJava)
