@@ -14,11 +14,14 @@ set(NO_TESTS ON CACHE BOOL "configure libdatachannel build")
 set(NO_EXAMPLES ON CACHE BOOL "configure libdatachannel build")
 add_subdirectory(libdatachannel)
 
-include_directories(
-        libdatachannel/include
-        "$ENV{JAVA_HOME}/include"
-        "$ENV{JAVA_HOME}/include/linux"
-        generated)
+include_directories(libdatachannel/include generated)
+include_directories(jdk)
+if(WIN32)
+    include_directories(jdk/windows)
+else()
+    include_directories(jdk/unix)
+endif()
+
 
 add_compile_options(-Werror -fPIC -D "PROJECT_VERSION=${PROJECT_VERSION}")
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
