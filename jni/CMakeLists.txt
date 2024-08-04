@@ -4,8 +4,6 @@ project(libdatachannel_jni C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 
-set(OPENSSL_USE_STATIC_LIBS FALSE CACHE BOOL "configure libdatachannel build")
-
 option(PROJECT_VERSION "The version of the project" "unspecified")
 
 set(NO_WEBSOCKET ON CACHE BOOL "configure libdatachannel build")

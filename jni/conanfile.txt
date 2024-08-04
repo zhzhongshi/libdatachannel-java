@@ -1,5 +1,2 @@
 [requires]
 openssl/3.2.2
-
-[options]
-openssl/*:shared=True
