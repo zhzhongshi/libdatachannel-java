@@ -42,9 +42,10 @@ val buildReleaseBinaries = project.findProperty("libdatachannel.build-release-bi
     ?.toBooleanStrictOrNull()
     ?: !project.version.toString().endsWith("-SNAPSHOT")
 
-fun DockcrossRunTask.baseConfigure(outputTo: Directory, args: List<String> = emptyList()) {
+fun DockcrossRunTask.baseConfigure(outputTo: Directory, target: BuildTarget) {
     group = nativeGroup
 
+    image = target.image
     dockcrossTag = "20240729-13d3b71"
     inputs.dir(jniPath)
 
@@ -52,6 +53,7 @@ fun DockcrossRunTask.baseConfigure(outputTo: Directory, args: List<String> = emp
 
     output = outputTo.dir("native")
     val conanDir = "conan"
+    extraEnv.putAll(target.env)
     extraEnv.put("CONAN_HOME", SubstitutingString("\${OUTPUT_DIR}/$conanDir/home"))
     // OpenSSL's makefile constructs broken compiler paths due to CROSS_COMPILE
     extraEnv.put("CROSS_COMPILE", "")
@@ -62,7 +64,7 @@ fun DockcrossRunTask.baseConfigure(outputTo: Directory, args: List<String> = emp
     val conanProviderOption = SubstitutingString("-DCMAKE_PROJECT_TOP_LEVEL_INCLUDES=\${MOUNT_SOURCE}/jni/cmake-conan/conan_provider.cmake")
     script = listOf(
         listOf("conan", "profile", "detect", "-f"),
-        listOf("cmake", relativePathToProject, conanProviderOption, projectVersionOption, releaseOption) + args,
+        listOf("cmake", relativePathToProject, conanProviderOption, projectVersionOption, releaseOption) + target.args,
         listOf("make", "-j${project.gradle.startParameter.maxWorkerCount}"),
     )
 
@@ -77,17 +79,16 @@ fun Jar.baseConfigure(compileTask: TaskProvider<DockcrossRunTask>, buildOutputDi
     dependsOn(compileTask)
 
     from(buildOutputDir) {
-        include("native/*.so")
-        include("native/*.dll")
+        include("native/libdatachannel-java.so")
+        include("native/libdatachannel-java.dll")
     }
 }
 
 val dockcrossOutputDir: Directory = project.layout.buildDirectory.get().dir("dockcross")
 val nativeForHostOutputDir: Directory = dockcrossOutputDir.dir("host")
 val compileNativeForHost by tasks.registering(DockcrossRunTask::class) {
-    baseConfigure(nativeForHostOutputDir)
+    baseConfigure(nativeForHostOutputDir, BuildTarget(image = "host", classifier = "host"))
     unsafeWritableMountSource = true
-    image = "host"
     runner(NonContainerRunner)
 }
 
@@ -120,9 +121,8 @@ for (target in targets) {
     val taskSuffix = target.classifier.split("[_-]".toRegex())
         .joinToString(separator = "") { it.lowercase().replaceFirstChar(Char::uppercaseChar) }
     val compileNative = tasks.register("compileNativeFor$taskSuffix", DockcrossRunTask::class) {
-        baseConfigure(outputDir, target.args)
+        baseConfigure(outputDir, target)
         unsafeWritableMountSource = true
-        image = target.image
         containerName = "dockcross-${project.name}-${target.classifier}"
 
         if (ci) {
