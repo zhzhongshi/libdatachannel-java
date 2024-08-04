@@ -104,10 +104,12 @@ data class BuildTarget(
     val args: List<String> = emptyList(),
 )
 
+val unixArgs = listOf("-DCONAN_INSTALL_ARGS=--build=missing;-o;openssl/*:shared=True")
+
 val targets = listOf(
-    BuildTarget(image = "linux-x64", classifier = "x86_64"),
-    BuildTarget(image = "linux-x86", classifier = "x86_32"),
-    BuildTarget(image = "linux-arm64", classifier = "aarch64"),
+    BuildTarget(image = "linux-x64", classifier = "x86_64", args = unixArgs),
+    BuildTarget(image = "linux-x86", classifier = "x86_32", args = unixArgs),
+    BuildTarget(image = "linux-arm64", classifier = "aarch64", args = unixArgs),
     BuildTarget(image = "windows-static-x64", classifier = "windows-x86_64"),
 )
 
