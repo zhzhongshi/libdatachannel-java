@@ -6,7 +6,7 @@ import java.nio.file.Files
 
 plugins {
     id("tel.schich.libdatachannel.convention.common")
-    id("tel.schich.dockcross") version "0.2.3"
+    id("tel.schich.dockcross") version "0.3.0"
     id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
@@ -50,7 +50,6 @@ fun DockcrossRunTask.baseConfigure(outputTo: Directory, args: List<String> = emp
 
     dependsOn(tasks.compileJava)
 
-    javaHome = javaToolchains.launcherFor(java.toolchain).map { it.metadata.installationPath }
     output = outputTo.dir("native")
     val conanDir = "conan"
     extraEnv.put("CONAN_HOME", SubstitutingString("\${OUTPUT_DIR}/$conanDir/home"))
