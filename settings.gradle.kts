@@ -9,3 +9,6 @@ plugins {
 }
 
 include("arch-detect")
+project(":arch-detect").name = "libdatachannel-java-arch-detect"
+
+includeBuild("example/java")

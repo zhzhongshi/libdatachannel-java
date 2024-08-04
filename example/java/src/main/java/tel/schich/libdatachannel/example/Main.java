@@ -1,9 +1,12 @@
+package tel.schich.libdatachannel.example;
+
 import static tel.schich.libdatachannel.DataChannelCallback.Message.handleBinary;
 import static tel.schich.libdatachannel.DataChannelCallback.Message.handleText;
 import static tel.schich.libdatachannel.GatheringState.RTC_GATHERING_COMPLETE;
 import static tel.schich.libdatachannel.PeerConnectionConfiguration.uris;
 
 import tel.schich.libdatachannel.DataChannel;
+import tel.schich.libdatachannel.LibDataChannelArchDetect;
 import tel.schich.libdatachannel.PeerConnection;
 import tel.schich.libdatachannel.PeerConnectionConfiguration;
 import tel.schich.libdatachannel.PeerState;
@@ -23,7 +26,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 public class Main {
-
     public static void main2(String[] args) {
         final var cfg = PeerConnectionConfiguration.DEFAULT.withIceServers(uris("stun:stun.l.google.com:19302"));
         // try with resources to cleanup peer when done
@@ -112,6 +114,7 @@ public class Main {
     static final String WEBSITE = "http://localhost:8080/libdatachannel-java/test.html";
 
     public static void main(String[] args) {
+        LibDataChannelArchDetect.initialize();
         final var cfg = PeerConnectionConfiguration.DEFAULT.withIceServers(uris("stun.l.google.com:19302"));
         while (true) {
             try (var offer = Offer.create("test", cfg).join()) {
