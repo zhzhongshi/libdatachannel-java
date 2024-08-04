@@ -54,7 +54,14 @@ class Platform {
         return PATH_PROP_PREFIX + name.toLowerCase() + PATH_PROP_CLASS_PATH;
     }
 
-    public static String detectCpuArch() {
+    private static String archPrefixForOs() {
+        if (getOS() == OS.WINDOWS) {
+            return "windows-";
+        }
+        return "";
+    }
+
+    private static String detectCpuArch() {
         String arch = System.getProperty("os.arch").toLowerCase();
         if (arch.contains("arm")) {
             return "armv7";
@@ -74,11 +81,16 @@ class Platform {
         return arch;
     }
 
+    public static String detectArch() {
+        return archPrefixForOs() + detectCpuArch();
+    }
+
     public static String libraryFilename(String name) {
+        final String libName = "lib" + name;
         if (getOS() == OS.WINDOWS) {
-            return name + ".dll";
+            return libName + ".dll";
         }
-        return "lib" + name + ".so";
+        return libName + ".so";
     }
 
     private static void loadExplicitLibrary(String name, Class<?> base) {
