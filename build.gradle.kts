@@ -147,7 +147,7 @@ for (target in targets) {
 }
 
 dependencies {
-    "tel.schich:jni-access-generator:1.1.6".also {
+    "tel.schich:jni-access-generator:1.1.7".also {
         annotationProcessor(it)
         compileOnly(it)
     }
