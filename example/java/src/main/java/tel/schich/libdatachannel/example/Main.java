@@ -13,10 +13,9 @@ import tel.schich.libdatachannel.PeerState;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -187,7 +186,10 @@ public class Main {
         System.out.println("Connection Open!");
         c.sendMessage("Hello There!");
         try {
-            final byte[] imageBytes = Files.readAllBytes(Path.of("img.png"));
+            final byte[] imageBytes;
+            try (InputStream in = Main.class.getResourceAsStream("/img.png")) {
+                imageBytes = in.readAllBytes();
+            }
             final ByteBuffer buffer = ByteBuffer.allocateDirect(imageBytes.length);
             buffer.put(imageBytes);
             buffer.flip();
