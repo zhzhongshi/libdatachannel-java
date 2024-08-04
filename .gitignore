@@ -6,4 +6,5 @@ out/
 /_jna*
 /jni/generated/
 /jni/cmake-build-*/
+/jni/venv
 *.log
