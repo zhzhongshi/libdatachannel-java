@@ -111,7 +111,16 @@ public class Main {
         }
     }
 
-    static final String WEBSITE = "http://localhost:8080/libdatachannel-java/test.html";
+    private static final String WEB_EXAMPLE_URL;
+
+    static {
+        String urlFromEnv = System.getenv("WEB_EXAMPLE_URL");
+        if (urlFromEnv != null && !urlFromEnv.isEmpty()) {
+            WEB_EXAMPLE_URL = urlFromEnv;
+        } else {
+            WEB_EXAMPLE_URL = "https://pschichtel.github.io/libdatachannel-java/index.html";
+        }
+    }
 
     public static void main(String[] args) {
         LibDataChannelArchDetect.initialize();
@@ -125,7 +134,7 @@ public class Main {
                 offer.channel.peer().onStateChange.register(Main::handleStateChange);
                 final var encoded = Base64.getEncoder().encodeToString(offer.sdp.getBytes());
                 System.out.println("SDP:\n\n" + offer.sdp);
-                System.out.println("Awaiting Answer...\n" + WEBSITE + "?sdp=" + encoded);
+                System.out.println("Awaiting Answer...\n" + WEB_EXAMPLE_URL + "?sdp=" + encoded);
 
                 String remoteSdp = Main.readCompressedSdp();
                 while (remoteSdp == null) {
