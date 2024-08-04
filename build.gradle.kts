@@ -111,6 +111,7 @@ val targets = listOf(
     BuildTarget(image = "linux-x86", classifier = "x86_32", args = unixArgs),
     BuildTarget(image = "linux-arm64", classifier = "aarch64", args = unixArgs),
     BuildTarget(image = "windows-static-x64", classifier = "windows-x86_64"),
+    BuildTarget(image = "windows-static-x86", classifier = "windows-x86_32"),
 )
 
 val packageNativeAll by tasks.registering(DefaultTask::class) {
