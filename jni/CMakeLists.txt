@@ -23,7 +23,7 @@ else()
 endif()
 
 
-add_compile_options(-Werror -fPIC -D "PROJECT_VERSION=${PROJECT_VERSION}")
+add_compile_options(-Werror -Wall -Wextra -Wno-unused-parameter -fPIC -D "PROJECT_VERSION=${PROJECT_VERSION}")
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
     add_compile_options(-O3 -flto)
 else()
