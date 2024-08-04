@@ -32,7 +32,7 @@ add_link_options(-fvisibility=hidden)
 if(NOT WIN32)
     add_link_options(-z noexecstack)
 else()
-    add_link_options(-static-libstdc++)
+    add_link_options(-static)
 endif()
 
 add_library(datachannel-java SHARED
