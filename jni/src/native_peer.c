@@ -50,7 +50,7 @@ SET_CALLBACK_INTERFACE_IMPL(rtcSetTrackCallback, handle_track)
 
 JNIEXPORT jint JNICALL
 Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreatePeerConnection(JNIEnv *env, jclass clazz,
-                                                                            jbyteArray iceServers, jstring proxyServer,
+                                                                            jobjectArray iceServers, jstring proxyServer,
                                                                             jstring bindAddress, jint certificateType,
                                                                             jint iceTransportPolicy,
                                                                             jboolean enableIceTcp,
@@ -72,7 +72,18 @@ Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreatePeerConnection(JNIE
             .maxMessageSize = maxMessageSize,
     };
     if (iceServers != NULL) {
-        config.iceServers = (*env)->GetPrimitiveArrayCritical(env, iceServers, NULL);
+        config.iceServersCount = (*env)->GetArrayLength(env, iceServers);
+        if (config.iceServersCount > 0) {
+            config.iceServers = malloc(sizeof(char*) * config.iceServersCount);
+            if (config.iceServers == NULL) {
+                throw_native_exception(env, "Failed to allocate for ice servers!");
+                return EXCEPTION_THROWN;
+            }
+
+            for (int i = 0; i < config.iceServersCount; i++) {
+                config.iceServers[i] = (*env)->GetStringUTFChars(env, (*env)->GetObjectArrayElement(env, iceServers, i), NULL);
+            }
+        }
     }
     if (proxyServer != NULL) {
         config.proxyServer = (*env)->GetStringUTFChars(env, proxyServer, NULL);
@@ -90,6 +101,13 @@ Java_tel_schich_libdatachannel_LibDataChannelNative_rtcCreatePeerConnection(JNIE
     }
     if (bindAddress != NULL) {
         (*env)->ReleaseStringUTFChars(env, bindAddress, NULL);
+    }
+
+    if (config.iceServers != NULL) {
+        for (int i = 0; i < config.iceServersCount; i++) {
+            (*env)->ReleaseStringUTFChars(env, (*env)->GetObjectArrayElement(env, iceServers, i), config.iceServers[i]);
+        }
+        free(config.iceServers);
     }
 
     return result;

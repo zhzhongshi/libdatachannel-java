@@ -123,7 +123,7 @@ public class Main {
 
     public static void main(String[] args) {
         LibDataChannelArchDetect.initialize();
-        final var cfg = PeerConnectionConfiguration.DEFAULT.withIceServers(uris("stun.l.google.com:19302"));
+        final var cfg = PeerConnectionConfiguration.DEFAULT.withIceServers(uris("stun:stun.l.google.com:19302"));
         while (true) {
             try (var offer = Offer.create("test", cfg).join()) {
                 offer.channel.onOpen.register(Main::handleOpen);

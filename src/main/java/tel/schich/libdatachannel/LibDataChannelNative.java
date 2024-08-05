@@ -9,7 +9,7 @@ class LibDataChannelNative {
         LibDataChannel.initialize();
     }
 
-    static native int rtcCreatePeerConnection(byte @Nullable [] iceServers, @Nullable String proxyServer, @Nullable String bindAddress, int certificateType, int iceTransportPolicy, boolean enableIceTcp, boolean enableIceUdpMux, boolean disableAutoNegotiation, boolean forceMediaTransport, short portRangeBegin, short portRangeEnd, int mtu, int maxMessageSize);
+    static native int rtcCreatePeerConnection(String @Nullable [] iceServers, @Nullable String proxyServer, @Nullable String bindAddress, int certificateType, int iceTransportPolicy, boolean enableIceTcp, boolean enableIceUdpMux, boolean disableAutoNegotiation, boolean forceMediaTransport, short portRangeBegin, short portRangeEnd, int mtu, int maxMessageSize);
     static native int setupPeerConnectionListener(int peerHandle, PeerConnectionListener listener);
     static native int rtcClosePeerConnection(int peerHandle);
     static native int rtcDeletePeerConnection(int peerHandle);

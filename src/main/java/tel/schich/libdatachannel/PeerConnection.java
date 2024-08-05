@@ -91,16 +91,16 @@ public class PeerConnection implements Closeable {
         });
     }
 
-    private static byte @Nullable [] iceUrisToCStrings(@Nullable Collection<URI> uris) {
+    private static String @Nullable [] iceUrisToStrings(@Nullable Collection<URI> uris) {
         if (uris == null || uris.isEmpty()) {
             return null;
         }
-        ByteArrayOutputStream iceServers = new ByteArrayOutputStream();
+        int index = 0;
+        String[] strings = new String[uris.size()];
         for (URI server : uris) {
-            iceServers.writeBytes(server.toASCIIString().getBytes(StandardCharsets.US_ASCII));
-            iceServers.write(0);
+            strings[index++] = server.toASCIIString();
         }
-        return iceServers.toByteArray();
+        return strings;
     }
 
     /**
@@ -121,7 +121,7 @@ public class PeerConnection implements Closeable {
             bindAddress = config.bindAddress.toString();
         }
         int result = rtcCreatePeerConnection(
-                iceUrisToCStrings(config.iceServers),
+                iceUrisToStrings(config.iceServers),
                 proxyServer,
                 bindAddress,
                 config.certificateType.state,
