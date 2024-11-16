@@ -6,8 +6,8 @@ import java.nio.file.Files
 
 plugins {
     id("tel.schich.libdatachannel.convention.common")
-    id("tel.schich.dockcross") version "0.3.0"
-    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
+    alias(libs.plugins.dockcross)
+    alias(libs.plugins.nexusPublish)
 }
 
 fun extractLibDataChannelVersion(): String {
@@ -148,10 +148,8 @@ for (target in targets) {
 }
 
 dependencies {
-    "tel.schich:jni-access-generator:1.1.7".also {
-        annotationProcessor(it)
-        compileOnly(it)
-    }
+    annotationProcessor(libs.jniAccessGenerator)
+    compileOnly(libs.jniAccessGenerator)
 
     testImplementation(files(packageNativeForHost))
 }
