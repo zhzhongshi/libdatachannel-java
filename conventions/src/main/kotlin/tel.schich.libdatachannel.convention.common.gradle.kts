@@ -37,7 +37,7 @@ repositories {
 
 dependencies {
     compileOnly("org.eclipse.jdt:org.eclipse.jdt.annotation:2.3.0")
-    implementation("org.slf4j:slf4j-api:2.0.13")
+    implementation("org.slf4j:slf4j-api:2.0.16")
 
     testImplementation(platform("org.junit:junit-bom:5.11.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
