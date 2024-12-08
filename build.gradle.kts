@@ -46,7 +46,7 @@ fun DockcrossRunTask.baseConfigure(outputTo: Directory, target: BuildTarget) {
     group = nativeGroup
 
     image = target.image
-    dockcrossTag = "20240729-13d3b71"
+    dockcrossTag = "20241110-43b2dd1"
     inputs.dir(jniPath)
 
     dependsOn(tasks.compileJava)
