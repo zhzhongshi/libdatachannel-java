@@ -20,9 +20,47 @@ fun extractLibDataChannelVersion(): String {
 
     return match.groupValues[1]
 }
-version = "${extractLibDataChannelVersion()}.1-SNAPSHOT"
 
+fun produceVersion(): String {
+    val libDataChannelVersion = extractLibDataChannelVersion()
+    val hasTags = project.providers.exec {
+        commandLine("git", "tag")
+    }.standardOutput.asText.get().trim().isNotEmpty()
+    val defaultVersion = "$libDataChannelVersion.0-SNAPSHOT"
+    if (!hasTags) {
+        return defaultVersion
+    }
+    val describeOutput = project.providers.exec {
+        commandLine("git", "describe", "--tags")
+    }.standardOutput.asText.get().removePrefix("v")
+
+    val parts = describeOutput.split("-", limit = 2)
+    val tagVersion = parts[0]
+    return if (parts.size > 1) {
+        if (tagVersion.startsWith(libDataChannelVersion)) {
+            val versionParts = tagVersion.split('.').toMutableList()
+            versionParts[versionParts.size - 1] = versionParts[versionParts.size - 1].toInt().inc().toString()
+            versionParts.joinToString(".") + "-SNAPSHOT"
+        } else {
+            defaultVersion
+        }
+    } else {
+        if (tagVersion.startsWith(libDataChannelVersion)) {
+            tagVersion
+        } else {
+            throw GradleException("The version derived from the latest git tag is conflicting with libdatachannel!")
+        }
+    }
+}
+
+version = produceVersion()
 description = "${project.name} is a binding to the libdatachannel that feels native to Java developers."
+
+val currentVersion by tasks.registering(DefaultTask::class) {
+    doLast {
+        println(version)
+    }
+}
 
 val archDetectConfiguration by configurations.registering {
     isCanBeConsumed = true
